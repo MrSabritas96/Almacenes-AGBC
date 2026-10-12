@@ -26,10 +26,10 @@
 /src/db/schema/activos.schema.ts    @USUARIO_MARIA
 
 # ── Módulo Almacenes: Walter ──
-/src/app/(admin)/almacenes/         @USUARIO_WALTER
-/src/actions/almacenes/             @USUARIO_WALTER
-/src/components/modules/almacenes/  @USUARIO_WALTER
-/src/db/schema/almacenes.schema.ts  @USUARIO_WALTER
+/src/app/(admin)/almacenes/         @walter-flowers-dx
+/src/actions/almacenes/             @walter-flowers-dx
+/src/components/modules/almacenes/  @walter-flowers-dx
+/src/db/schema/almacenes.schema.ts  @walter-flowers-dx
 
 # ── Módulo Conciliaciones: Manuel ──
 /src/app/(admin)/conciliaciones/            @MrSabritas96
