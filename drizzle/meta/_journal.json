@@ -8,6 +8,55 @@
       "when": 1791824027916,
       "tag": "0000_flippant_toad_men",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791849954048,
+      "tag": "0001_steep_blackheart",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791851433774,
+      "tag": "0002_lush_bloodscream",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791857273038,
+      "tag": "0003_heavy_captain_midlands",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791916301307,
+      "tag": "0004_clear_moondragon",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791917240537,
+      "tag": "0005_early_devos",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791943739114,
+      "tag": "0006_sleepy_bloodstorm",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792033461315,
+      "tag": "0007_talented_warbound",
+      "breakpoints": true
     }
   ]
 }

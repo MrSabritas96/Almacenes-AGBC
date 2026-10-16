@@ -39,7 +39,7 @@ export function secureAction<I, O>(
       const message = err instanceof Error ? err.message : "Error desconocido";
       await audit({ userId, action: meta.action, module: meta.module, entity: meta.entity,
         result: "failure", details: { message } });
-      return { ok: false, error: message };
+      return { ok: false, error: "No se pudo completar la operación. Inténtalo de nuevo." };
     }
   };
 }

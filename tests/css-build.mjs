@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+const root='.next/static';
+const files=readdirSync(root,{recursive:true}).filter(f=>String(f).endsWith('.css'));
+assert(files.length,'Ejecuta pnpm build antes de esta prueba.');
+const css=files.map(file=>readFileSync(path.join(root,file),'utf8')).join('\n');
+assert(!/@charset\b/i.test(css),'El CSS compilado no debe contener directivas de encoding importadas.');
+assert(/@layer\s+adminlte\b/.test(css),'Conservar la capa de estilos de AdminLTE.');
+assert(css.includes('.app-sidebar')&&css.includes('.warehouse-dashboard'),'Conservar los estilos del sidebar y del dashboard.');
+console.log('OK: CSS compilado sin @charset inválido; estilos y capa de AdminLTE conservados.');
