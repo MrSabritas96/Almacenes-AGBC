@@ -1,6 +1,4 @@
-# Dueños por módulo. Con "Require review from Code Owners" activado en la rama main,
-# nadie puede modificar el módulo de otro sin su aprobación.
-# TODO: confirmar usernames reales de GitHub de María y Walter.
+# Responsables: @MrSabritas96 (Manuel), @MariParedes (María), @walter-flowers-dx (Walter)
 
 # ── Núcleo compartido: Manuel (tech lead) ──
 *                                   @MrSabritas96
@@ -20,10 +18,10 @@
 /.github/                           @MrSabritas96
 
 # ── Módulo Activos: María ──
-/src/app/(admin)/activos/           @USUARIO_MARIA
-/src/actions/activos/               @USUARIO_MARIA
-/src/components/modules/activos/    @USUARIO_MARIA
-/src/db/schema/activos.schema.ts    @USUARIO_MARIA
+/src/app/(admin)/activos/           @MariParedes
+/src/actions/activos/               @MariParedes
+/src/components/modules/activos/    @MariParedes
+/src/db/schema/activos.schema.ts    @MariParedes
 
 # ── Módulo Almacenes: Walter ──
 /src/app/(admin)/almacenes/         @walter-flowers-dx
