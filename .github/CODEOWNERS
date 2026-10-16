@@ -1,0 +1,38 @@
+# Dueños por módulo. Con "Require review from Code Owners" activado en la rama main,
+# nadie puede modificar el módulo de otro sin su aprobación.
+# TODO: confirmar usernames reales de GitHub de María y Walter.
+
+# ── Núcleo compartido: Manuel (tech lead) ──
+*                                   @MrSabritas96
+/src/lib/                           @MrSabritas96
+/src/db/index.ts                    @MrSabritas96
+/src/db/seed.ts                     @MrSabritas96
+/src/db/schema/auth.schema.ts       @MrSabritas96
+/src/db/schema/rbac.schema.ts       @MrSabritas96
+/src/db/schema/audit.schema.ts      @MrSabritas96
+/src/components/ui/                 @MrSabritas96
+/src/components/sidebar/            @MrSabritas96
+/server.js                          @MrSabritas96
+/Dockerfile                         @MrSabritas96
+/docker-compose.yml                 @MrSabritas96
+/package.json                       @MrSabritas96
+/pnpm-lock.yaml                     @MrSabritas96
+/.github/                           @MrSabritas96
+
+# ── Módulo Activos: María ──
+/src/app/(admin)/activos/           @USUARIO_MARIA
+/src/actions/activos/               @USUARIO_MARIA
+/src/components/modules/activos/    @USUARIO_MARIA
+/src/db/schema/activos.schema.ts    @USUARIO_MARIA
+
+# ── Módulo Almacenes: Walter ──
+/src/app/(admin)/almacenes/         @walter-flowers-dx
+/src/actions/almacenes/             @walter-flowers-dx
+/src/components/modules/almacenes/  @walter-flowers-dx
+/src/db/schema/almacenes.schema.ts  @walter-flowers-dx
+
+# ── Módulo Conciliaciones: Manuel ──
+/src/app/(admin)/conciliaciones/            @MrSabritas96
+/src/actions/conciliaciones/                @MrSabritas96
+/src/components/modules/conciliaciones/     @MrSabritas96
+/src/db/schema/conciliaciones.schema.ts     @MrSabritas96

@@ -1,0 +1,11 @@
+import { History } from "lucide-react";
+import type { Asignacion } from "@/actions/activos/asignaciones-modelo";
+import { EstadoAsignacion } from "./asignaciones";
+import { fecha } from "./presentacion";
+
+export function HistorialAsignaciones({ registros, hoy }: { registros: Asignacion[]; hoy: string }) {
+  return <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white" aria-labelledby="historial-asignaciones">
+    <h2 id="historial-asignaciones" className="flex items-center gap-2 border-b border-ink-200 px-6 py-4 font-semibold"><History className="h-5 w-5 text-brand-600" aria-hidden="true" />Historial de asignaciones</h2>
+    {registros.length === 0 ? <p className="px-6 py-8 text-sm text-ink-500">Todavía no se registraron asignaciones para este bien.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[750px] text-left text-sm"><caption className="sr-only">Historial de custodia del activo</caption><thead className="bg-ink-100 text-xs text-ink-500"><tr>{["Tipo / situación", "Receptor / destino", "Fechas", "Detalle"].map(label => <th key={label} className="px-5 py-3 font-medium" scope="col">{label}</th>)}</tr></thead><tbody className="divide-y divide-ink-100">{registros.map(a => <tr key={a.id} className="align-top"><td className="px-5 py-4"><p className="mb-2 font-medium">{a.tipo === "fija" ? "Fija" : "Momentánea"}</p><EstadoAsignacion asignacion={a} hoy={hoy} /></td><td className="px-5 py-4"><p>{a.responsableDestino}</p><p className="mt-1 text-xs text-ink-500">{a.ubicacionDestino}</p></td><td className="px-5 py-4 text-xs"><p>Entrega: {fecha(a.fechaInicio)}</p>{a.fechaDevolucionPrevista && <p className="mt-1">Prevista: {fecha(a.fechaDevolucionPrevista)}</p>}{a.fechaCierre && <p className="mt-1">Cierre: {fecha(a.fechaCierre)}</p>}</td><td className="max-w-sm px-5 py-4"><p className="text-sm">{a.motivo}</p>{a.referenciaActa && <p className="mt-2 text-xs text-ink-500">Acta: {a.referenciaActa}</p>}<details className="mt-2 text-xs text-ink-500"><summary className="cursor-pointer text-brand-700">Ver custodia anterior y cierre</summary><p className="mt-2">Anterior: {a.responsableAnterior || "Sin responsable"} · {a.ubicacionAnterior || "Sin ubicación"}</p>{a.motivoCierre && <p className="mt-1">Cierre: {a.motivoCierre}</p>}</details></td></tr>)}</tbody></table></div>}
+  </section>;
+}
