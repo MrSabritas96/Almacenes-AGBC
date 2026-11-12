@@ -7,11 +7,20 @@ import { audit } from "@/lib/audit";
 import { guardarActaSchema } from "./actas-modelo";
 import { buscarBienesActa, registrarActa, type BienSeleccionable } from "./actas-servicio";
 import { AsignacionError } from "./asignaciones-modelo";
+import { procedenciaActiva } from "./procedencias-consultas";
+import { siguienteNumeroActa } from "./actas-correlativos";
+import { gestionActiva } from "./gestion-consultas";
 
-export async function buscarActivosParaActa(q:string):Promise<{ok:true;data:BienSeleccionable[]}|{ok:false;error:string}>{
+export async function buscarActivosParaActa(q:string,entidad?:string,exacto=false):Promise<{ok:true;data:BienSeleccionable[]}|{ok:false;error:string}>{
   const session=await getSession();if(!session||!(await hasPermission(session.user.id,"activos:read")))return {ok:false,error:"No tienes acceso al inventario."};
   if(typeof q!=="string"||q.trim().length<2)return {ok:false,error:"Escribe al menos dos caracteres para buscar."};
-  try{return {ok:true,data:await buscarBienesActa(q)};}catch{return {ok:false,error:"No se pudo consultar el inventario."};}
+  try{return {ok:true,data:await buscarBienesActa(q,entidad,exacto)};}catch{return {ok:false,error:"No se pudo consultar el inventario."};}
+}
+export async function consultarNumeroActa(entidad:string,gestion:number,tipo:"fija"|"momentanea"|"devolucion"):Promise<{ok:true;numero:number}|{ok:false;error:string}>{
+ const session=await getSession();if(!session||!(await hasPermission(session.user.id,"activos:update")))return {ok:false,error:"No tienes permiso para emitir actas."};
+ if(!(await procedenciaActiva(entidad))||!Number.isSafeInteger(gestion)||gestion<1900||gestion>2100||!["fija","momentanea","devolucion"].includes(tipo))return {ok:false,error:"Selecciona la procedencia, fecha y tipo de acta válidos."};
+ const activa=await gestionActiva();if(gestion!==activa.gestion)return {ok:false,error:`La gestión habilitada es ${activa.gestion}. Actualiza el formulario.`};
+ try{return {ok:true,numero:await siguienteNumeroActa(entidad,gestion,tipo==="devolucion"?"devolucion":"asignacion")};}catch{return {ok:false,error:"No se pudo consultar el correlativo."};}
 }
 export async function guardarActa(input:unknown):Promise<{ok:true;data:{id:string}}|{ok:false;error:string}>{
   const session=await getSession();if(!session)return {ok:false,error:"Tu sesión terminó. Vuelve a iniciar sesión."};

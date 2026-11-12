@@ -50,6 +50,83 @@
       "when": 1792090005341,
       "tag": "0006_medical_rafael_vega",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792513365519,
+      "tag": "0007_regional_inventario",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792589368849,
+      "tag": "0008_archivo_pdf_original",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792614610271,
+      "tag": "0009_series_actas_procedencia",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792629101501,
+      "tag": "0010_edicion_papelera_actas",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792774838473,
+      "tag": "0011_catalogo_procedencias",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792779741705,
+      "tag": "0012_papelera_asignaciones",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793707200000,
+      "tag": "0013_correlativos_acta_por_tipo",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793719857000,
+      "tag": "0014_papelera_asignaciones_activas_prueba",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794009600000,
+      "tag": "0015_gestion_activa",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794096000000,
+      "tag": "0016_historial_gestiones",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794096000001,
+      "tag": "0017_mantenimientos_vehiculos",
+      "breakpoints": true
     }
   ]
 }

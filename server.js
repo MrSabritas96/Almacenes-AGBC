@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+// La ejecución diaria usa la compilación lista; dev se conserva para editar.
+if (process.argv.includes("--production")) process.env.NODE_ENV = "production";
+
 // Servidor híbrido: Next.js + Socket.IO en el mismo puerto.
 const { createServer } = require("node:http");
 const next = require("next");
@@ -8,7 +11,8 @@ const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME || "0.0.0.0";
 const port = Number(process.env.PORT || 3000);
 
-const app = next({ dev, hostname, port });
+// Webpack evita recargas repetidas de Turbopack en este entorno local de Windows.
+const app = next({ dev, hostname, port, webpack: dev });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {

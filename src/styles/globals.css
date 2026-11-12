@@ -1,45 +1,254 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-brand-50: hsl(238 100% 97%);
-  --color-brand-100: hsl(238 100% 93%);
-  --color-brand-400: hsl(238 85% 70%);
-  --color-brand-500: hsl(243 75% 60%);
-  --color-brand-600: hsl(245 65% 52%);
-  --color-brand-700: hsl(246 60% 44%);
-  --color-accent-400: hsl(187 85% 55%);
-  --color-accent-500: hsl(189 90% 43%);
-  --color-ink-900: hsl(224 40% 8%);
-  --color-ink-800: hsl(224 35% 12%);
-  --color-ink-700: hsl(224 30% 18%);
-  --color-ink-500: hsl(222 15% 46%);
-  --color-ink-200: hsl(220 20% 90%);
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Identidad visual: azul #20539A, azul noche #102542 y amarillo #FECC36 */
+  --color-brand-50:  #f1f5fb;
+  --color-brand-100: #e1eaf5;
+  --color-brand-200: #c4d5eb;
+  --color-brand-300: #9bb9dc;
+  --color-brand-400: #6e96c6;
+  --color-brand-500: #3f70ad;
+  --color-brand-600: #20539a;
+  --color-brand-700: #1b477f;
+  --color-brand-800: #173963;
+  --color-brand-900: #102542;
+  --color-brand-950: #091829;
+
+  /* ─── Paleta Institucional AGBC: Amarillo / Dorado ──────────────────────── */
+  --color-accent-50:  #fff9e6;
+  --color-accent-100: #fff1c2;
+  --color-accent-200: #ffe68a;
+  --color-accent-300: #ffda58;
+  --color-accent-400: #fecc36;
+  --color-accent-500: #e9b81f;
+  --color-accent-600: #c99612;
+  --color-accent-700: #9f730c;
+  --color-accent-800: #76550a;
+  --color-accent-900: #523d09;
+
+  /* ─── Neutros de alto contraste ────────────────────────────────────────── */
+  --color-ink-50:  hsl(220 33% 98%);
   --color-ink-100: hsl(220 25% 96%);
+  --color-ink-200: hsl(220 20% 90%);
+  --color-ink-300: hsl(220 18% 80%);
+  --color-ink-400: hsl(221 16% 64%);
+  --color-ink-500: hsl(222 15% 46%);
+  --color-ink-600: hsl(223 20% 34%);
+  --color-ink-700: hsl(224 30% 20%);
+  --color-ink-800: hsl(224 35% 12%);
+  --color-ink-900: hsl(224 40%  8%);
+  --color-ink-950: hsl(224 45%  5%);
+
+  /* ─── Tokens de diseño ─────────────────────────────────────────────────── */
   --radius-card: 1rem;
-  --shadow-glow: 0 10px 40px -10px hsl(243 75% 60% / 0.45);
+  --shadow-glow:       0 10px 40px -10px rgb(32 83 154 / 0.35);
+  --shadow-subtle:     0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-card:       0 4px 6px -1px rgb(0 0 0 / 0.04), 0 2px 4px -2px rgb(0 0 0 / 0.03);
+  --shadow-card-hover: 0 12px 24px -4px rgb(0 0 0 / 0.08), 0 4px 8px -2px rgb(0 0 0 / 0.04);
+  --shadow-header:     0 4px 24px -4px rgb(16 37 66 / 0.5);
 }
 
-:root {
-  color-scheme: light;
-}
+/* ─── Base ─────────────────────────────────────────────────────────────── */
+:root { color-scheme: light; }
+
+html { scrollbar-gutter: stable; }
 
 html, body {
   max-width: 100%;
-  overflow-x: clip; /* sin desbordes horizontales y compatible con position: sticky */
+  overflow-x: clip;
 }
 
 body {
   font-family: var(--font-sans);
-  background: var(--color-ink-100);
+  background: hsl(220 25% 95%);
   color: var(--color-ink-900);
   -webkit-font-smoothing: antialiased;
 }
 
-* { transition-property: color, background-color, border-color, box-shadow, transform, opacity;
-    transition-duration: 180ms; transition-timing-function: ease; }
+button, a, input, select, textarea, [role="button"] {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
 
-@keyframes fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-.animate-fade-up { animation: fade-up 0.5s ease both; }
+/* ─── Animaciones ──────────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
 
-.glass { background: hsl(0 0% 100% / 0.08); backdrop-filter: blur(16px); border: 1px solid hsl(0 0% 100% / 0.15); }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes shimmer-gold {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+.animate-fade-up    { animation: fade-up    0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-fade-in    { animation: fade-in    0.25s ease both; }
+.animate-slide-down { animation: slide-down 0.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ─── Utilidades globales ──────────────────────────────────────────────── */
+.glass {
+  background: hsl(0 0% 100% / 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid hsl(0 0% 100% / 0.5);
+}
+
+/* ─── Scrollbar personalizada ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: hsl(220 18% 80%);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: hsl(217 91% 48% / 0.5); }
+
+/* ─── Header corporativo AGBC ──────────────────────────────────────────────
+   Degradado azul marino profundo con acento dorado en borde inferior
+   ─────────────────────────────────────────────────────────────────────── */
+.agbc-header {
+  background: linear-gradient(
+    135deg,
+    #102542 0%,
+    #173963 48%,
+    #20539a 100%
+  );
+  border-bottom: 3px solid #fecc36;
+  box-shadow: 0 4px 24px -4px rgb(16 37 66 / 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Brillo superior sutil */
+.agbc-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, hsl(0 0% 100% / 0.05) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* Halo dorado en esquina derecha */
+.agbc-header::after {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, hsl(44 96% 52% / 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ─── Logo ──────────────────────────────────────────────────────────────── */
+.agbc-logo-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fecc36 0%, #e9b81f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgb(254 204 54 / 0.3), 0 1px 3px hsl(0 0% 0% / 0.3);
+  flex-shrink: 0;
+  color: #102542;
+}
+
+.agbc-logo-text-main {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.agbc-logo-text-sub {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: hsl(44 96% 70%);
+  margin-top: 1px;
+}
+
+/* ─── Nav links del header ──────────────────────────────────────────────── */
+.agbc-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: hsl(214 60% 80%);
+  position: relative;
+}
+
+.agbc-nav-link:hover {
+  background: hsl(0 0% 100% / 0.07);
+  color: #fff;
+}
+
+.agbc-nav-link.active {
+  background: hsl(0 0% 100% / 0.12);
+  color: #fff;
+  font-weight: 600;
+}
+
+.agbc-nav-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55%;
+  height: 2px;
+  background: hsl(44 96% 52%);
+  border-radius: 99px;
+}
+
+/* ─── Botón primario institucional ──────────────────────────────────────── */
+.btn-agbc-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5625rem 1.125rem;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: hsl(222 82% 12%);
+  background: linear-gradient(135deg, hsl(44 96% 56%) 0%, hsl(42 94% 46%) 100%);
+  box-shadow: 0 2px 8px hsl(44 96% 52% / 0.35);
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+
+.btn-agbc-primary:hover {
+  background: linear-gradient(135deg, hsl(44 96% 62%) 0%, hsl(44 96% 54%) 100%);
+  box-shadow: 0 4px 16px hsl(44 96% 52% / 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-agbc-primary:active { transform: scale(0.97); }
+
+/* ─── Encabezados de página ─────────────────────────────────────────────── */
+.page-section-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: hsl(217 91% 48%);
+}

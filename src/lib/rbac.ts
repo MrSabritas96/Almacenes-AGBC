@@ -1,10 +1,11 @@
+import { cache } from "react";
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 export const SUPERADMIN_ROLE = "superadmin";
 
 /** Devuelve el set de permisos (`modulo:accion`) del usuario. superadmin => "*" */
-export async function getUserPermissions(userId: string): Promise<Set<string>> {
+export const getUserPermissions = cache(async function getUserPermissions(userId: string): Promise<Set<string>> {
   const rows = await db
     .select({ key: schema.permissions.key, role: schema.roles.name })
     .from(schema.userRoles)
@@ -19,7 +20,7 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
     if (r.key) set.add(r.key);
   }
   return set;
-}
+});
 
 export async function hasPermission(userId: string, permission: string): Promise<boolean> {
   const perms = await getUserPermissions(userId);

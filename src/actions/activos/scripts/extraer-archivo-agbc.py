@@ -29,6 +29,7 @@ for fn in ['ASIGNACIONES - 2026 - AGBC.xlsx','DEVOLUCIONES 2026 - AGBC.xlsx']:
    city=re.search(r'EN LA CIUDAD DE (.*?),',narrative,re.I)
    bienes=[]; header=next((rr for rr in range(row+1,min(end,row+20)) if 'DESCRIPCI' in norm(val(rr,col+1))),None)
    if header:
+    columnas_observaciones=[cc for cc in range(col,right) if norm(val(header,cc)).startswith('OBS')]
     for rr in range(header+1,end):
      if not re.fullmatch(r'\d+(?:\.0)?',val(rr,col)):continue
      description=val(rr,col+1)
@@ -36,7 +37,7 @@ for fn in ['ASIGNACIONES - 2026 - AGBC.xlsx','DEVOLUCIONES 2026 - AGBC.xlsx']:
      vals=[val(rr,cc) for cc in range(col+2,right)]
      estado=next((v for v in vals if norm(v) in ['BUENO','REGULAR','MALO','MAL ESTADO']),'')
      codes=[v for v in vals[:2] if v and v!=estado]
-     bienes.append({'fila':rr,'numero':val(rr,col),'descripcion':description,'codigos':codes,'estado':estado,'observaciones':' | '.join(vals[3:]) if len(vals)>3 else ''})
+     bienes.append({'fila':rr,'numero':val(rr,col),'descripcion':description,'codigos':codes,'estado':estado,'observaciones':' | '.join(val(rr,cc) for cc in columnas_observaciones if val(rr,cc))})
    docs.append({'hoja':ws.title,'bloque':coord,'titulo':title,'tipo':'devolucion' if 'DEVOL' in norm(title) else 'actualizacion' if 'ACTUAL' in norm(title) else 'asignacion','numero':reference,'responsable':responsible,'cargo':cargo,'fecha':fecha,'ciudad':city[1].strip() if city else '', 'texto':narrative,'bienes':bienes,'celdas':cells,'incidencias':(['Sin número identificado'] if not reference else [])+(['Sin responsable identificado'] if not responsible else [])+(['Fecha por revisar'] if not fecha else [])+(['Sin bienes identificados'] if not bienes else [])})
  files.append({'nombre':fn,'ruta':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'hojas':len(w.sheetnames),'omitidas':skipped,'actas':docs});w.close()
 Path(sys.argv[2]).write_text(json.dumps(files,ensure_ascii=False,indent=2),encoding='utf-8')

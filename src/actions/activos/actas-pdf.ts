@@ -1,7 +1,10 @@
 import { PDFDocument, rgb, type PDFPage, type PDFFont } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
+import { cabeceraActualPng } from "@/components/modules/activos/pdf-cabecera-actual";
 import { cabeceraPng, fuenteVera, fuenteVeraBold } from "@/components/modules/activos/pdf-assets";
 import { referenciaActa, type DocumentoActa } from "./actas-modelo";
+
+import { NOTA_ACTA, textoInstitucional, nombreProcedencia } from "./actas-plantilla";
 
 const NOTA="La asignación de bienes genera en el servidor público la responsabilidad sobre el debido uso, custodia y mantenimiento de los mismos; la pérdida, destrucción o maltrato por negligencia será imputado a su persona. Asimismo el funcionario que tiene a su cargo dichos bienes, por ningún concepto podrá efectuar préstamos y/o transferencias por cuenta propia. Para la liberación de responsabilidad deberá solicitar la conformidad escrita de la Unidad de Activos Fijos. El presente documento no invalida las actas de gestiones pasadas de las cuales no se emitió el acta de devolución correspondiente.";
 function lines(text:string,font:PDFFont,size:number,width:number){
@@ -22,31 +25,34 @@ export async function generarActaPdf(a:DocumentoActa,archivo?:PlantillaArchivo):
   const doc=await PDFDocument.create();doc.registerFontkit(fontkit);
   const font=await doc.embedFont(Buffer.from(fuenteVera,"base64"),{subset:true});
   const bold=await doc.embedFont(Buffer.from(fuenteVeraBold,"base64"),{subset:true});
-  const logo=await doc.embedPng(Buffer.from(cabeceraPng,"base64"));
-  const ref=archivo?.referencia??referenciaActa(a),c=a.cabecera;
-  const title=archivo?.titulo??`${a.tipo==="devolucion"?"ACTA DE DEVOLUCIÓN":a.tipo==="momentanea"?"ACTA DE ASIGNACIÓN MOMENTÁNEA":"ACTA DE ASIGNACIÓN"} DE ACTIVOS FIJOS ${c.entidad.toUpperCase()}`;
+  const logo=await doc.embedPng(Buffer.from(a.cabecera.formato?cabeceraActualPng:cabeceraPng,"base64"));
+  const ref=archivo?.referencia??referenciaActa(a),c=a.cabecera,institucional=!!c.formato;
+  const title=archivo?.titulo??`${a.tipo==="devolucion"?"ACTA DE DEVOLUCIÓN":a.tipo==="momentanea"&&!institucional?"ACTA DE ASIGNACIÓN MOMENTÁNEA":"ACTA DE ASIGNACIÓN"} DE ACTIVOS FIJOS ${nombreProcedencia(c.entidad,c.procedenciaNombre).toUpperCase()}`;
   const blue=rgb(.55,.65,.83),ink=rgb(.23,.23,.23);let page!:PDFPage,y=0;
   const draw=(text:string,x:number,top:number,size=9,weight=false)=>page.drawText(text,{x,y:top-size,font:weight?bold:font,size,color:ink});
   const centered=(text:string,top:number,size:number,weight=false,x=40,width=515)=>draw(text,x+(width-(weight?bold:font).widthOfTextAtSize(text,size))/2,top,size,weight);
   const block=(text:string,size=9,weight=false,width=515,x=40)=>{const ls=lines(text,weight?bold:font,size,width);for(const line of ls){draw(line,x,y,size,weight);y-=size+2;}return ls.length;};
   function newPage(first:boolean){
     page=doc.addPage([595.28,841.89]);y=806;
-    page.drawImage(logo,{x:52,y:y-53,width:491,height:59});y-=61;
+    const logoHeight=institucional?491*logo.height/logo.width:59;
+    page.drawImage(logo,{x:52,y:y-(institucional?logoHeight:53),width:491,height:logoHeight});y-=institucional?logoHeight+8:61;
     const agency="AGENCIA BOLIVIANA DE CORREOS";
     page.drawText(agency,{x:40+(515-font.widthOfTextAtSize(agency,16))/2,y:y-16,font,size:16,color:rgb(.31,.59,.86)});y-=20;
     page.drawRectangle({x:40,y:y-21,width:515,height:21,color:blue});
     const size=Math.min(15,515*14/bold.widthOfTextAtSize(title,14));
     page.drawText(title,{x:40+(515-bold.widthOfTextAtSize(title,size))/2,y:y-16,font:bold,size,color:rgb(1,1,1)});y-=24;
-    centered(archivo?ref:`N° ${ref} · ${c.entidad.toUpperCase()}`,y,12,true);y-=24;
+    const referenciaVisible=archivo?ref:institucional?`N°${ref}`:`N° ${ref} · ${c.entidad.toUpperCase()}`;
+    for(const linea of lines(referenciaVisible,bold,12,515)){centered(linea,y,12,true);y-=14;}y-=10;
     if(first){
       const markTop=y;
-      draw(a.tipo==="devolucion"?"D":"A",425,markTop+5,70,true);
+      draw(a.tipo==="devolucion"?"D":"A",425,markTop+(institucional?20:5),70,true);
       block("RESPONSABLE:",10,true,365);block(c.responsable.toUpperCase(),10,false,365);y-=2;
       block("CARGO:",10,true,365);block(c.cargo.toUpperCase(),10,false,365);
       if(c.ci)block(`C.I.: ${c.ci}`,8,false,365);
       y=Math.min(y-6,markTop-65);
       const date=c.fecha.split("-").reverse().join("/");
       if(archivo)block(archivo.texto||"Texto de origen no identificado. Consultar el Excel original.",7.5);
+      else if(institucional)block(textoInstitucional(c,a.tipo),7.5);
       else block(`En la ciudad de ${c.ciudad}, en fecha ${date}, en instalaciones de la Agencia Boliviana de Correos, ${c.oficina}, dando cumplimiento al D.S. 181 de fecha 28 de junio de 2009, Normas Básicas del Sistema de Administración de Bienes y Servicios, Título II, Artículo Nº 116, Responsabilidad por el manejo de Bienes: "Todos los servidores públicos son responsables por el debido uso, custodia, preservación y solicitud de servicios de mantenimiento de los bienes que les fueran asignados", se procede a la ${a.tipo==="devolucion"?"DEVOLUCIÓN":a.tipo==="momentanea"?"ASIGNACIÓN MOMENTÁNEA":"ASIGNACIÓN"} de los activos de ${c.entidad}, bajo el siguiente detalle:`,7.5);
       if(c.fechaDevolucion)block(`Fecha prevista de devolución: ${c.fechaDevolucion.split("-").reverse().join("/")}`,8,true);
     }else block(`Responsable: ${c.responsable} · Continuación del detalle`,8);
@@ -71,15 +77,17 @@ export async function generarActaPdf(a:DocumentoActa,archivo?:PlantillaArchivo):
     }
   }
   y-=14;
-  const extra=archivo?[]:[`Motivo: ${c.motivo}`,`Ubicación de destino: ${c.ubicacionDestino}`,c.observacionesGenerales?`Observaciones generales: ${c.observacionesGenerales}`:""].filter(Boolean);
+  const extra=archivo||institucional?[]:[`Motivo: ${c.motivo}`,`Ubicación de destino: ${c.ubicacionDestino}`,c.observacionesGenerales?`Observaciones generales: ${c.observacionesGenerales}`:""].filter(Boolean);
   for(const text of extra)for(const l of lines(text,font,8.5,515)){if(y<245){newPage(false);}draw(l,40,y,8.5);y-=11.5;}
-  const signatures=[{title:"ENTREGUÉ CONFORME",name:c.entregadoPor,cargo:c.cargoEntrega,ci:c.ciEntrega},{title:"VoBo",name:"",cargo:"",ci:""},{title:"RECIBÍ CONFORME",name:c.recibidoPor,cargo:c.cargoRecepcion,ci:c.ciRecepcion}];
+  const firma={name:"SELLO Y FIRMA",cargo:"",ci:""};
+  const signatures=[{title:"ENTREGUÉ CONFORME",...firma},{title:"VoBo",name:"",cargo:"",ci:""},{title:"RECIBÍ CONFORME",...firma}];
   const sigWidths=[162,65,162],sigLeft=103;
   const signHeight=Math.max(86,...signatures.map((s,i)=>64+[s.name,s.cargo,s.ci?`C.I.: ${s.ci}`:""].filter(Boolean).reduce((n,t)=>n+lines(t,font,6.5,sigWidths[i]!-12).length*8,0)));
   const noteWidth=418;
-  const required=lines(`Nota: ${NOTA}`,bold,7,noteWidth).length*9+signHeight+62;
+  const nota=institucional?NOTA_ACTA:NOTA;
+  const required=lines(`Nota: ${nota}`,bold,7,noteWidth).length*9+signHeight+62;
   if(y<required+40)newPage(false);y-=8;
-  block(`Nota: ${NOTA}`,7,true,noteWidth,108);y-=8;block("*c.c.: Archivo Activos Fijos/Funcionario",7,false,418,108);
+  block(`Nota: ${nota}`,7,true,noteWidth,108);y-=8;block("*c.c.: Archivo Activos Fijos/Funcionario",7,false,418,108);
   y-=5;page.drawLine({start:{x:103,y},end:{x:520,y},thickness:.5,color:ink});
   const signTop=y-10;let signX=sigLeft;
   signatures.forEach((s,i)=>{const x=signX,w=sigWidths[i]!;signX+=w;page.drawRectangle({x,y:signTop-signHeight,width:w,height:signHeight,borderColor:ink,borderWidth:.5,borderDashArray:[1,1]});

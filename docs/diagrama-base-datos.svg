@@ -1,0 +1,397 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3320" height="1710" viewBox="0 0 3320 1710">
+<defs><linearGradient id="head" x1="0" x2="1"><stop stop-color="#102542"/><stop offset="1" stop-color="#20539a"/></linearGradient><filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#102542" flood-opacity=".12"/></filter><marker id="crow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1 L10 6 L1 6 M1 6 L10 6 L1 11" fill="none" stroke="#6c87a8" stroke-width="1.5"/></marker></defs>
+<rect width="100%" height="100%" fill="#f3f6fb"/>
+<rect x="0" y="0" width="3320" height="132" fill="url(#head)"/><rect x="0" y="128" width="3320" height="6" fill="#fecc36"/>
+<text x="60" y="55" fill="#fecc36" font-family="Inter,Segoe UI,sans-serif" font-size="18" font-weight="700" letter-spacing="3">MODELO DE DATOS · ALMACENES AGBC</text>
+<text x="60" y="101" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="34" font-weight="800">Diagrama completo de la base de datos</text>
+<text x="3260" y="91" text-anchor="end" fill="#dbe8f7" font-family="Inter,Segoe UI,sans-serif" font-size="15">PostgreSQL · 26 tablas · 2 vistas</text>
+<rect x="60" y="149" width="490" height="38" rx="10" fill="#20539a"/>
+<text x="74" y="174" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" letter-spacing=".6">INVENTARIO E IMPORTACIONES</text>
+<rect x="586" y="149" width="490" height="38" rx="10" fill="#173963"/>
+<text x="600" y="174" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" letter-spacing=".6">CUSTODIA Y ACTAS DIGITALES</text>
+<rect x="1112" y="149" width="490" height="38" rx="10" fill="#20539a"/>
+<text x="1126" y="174" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" letter-spacing=".6">ARCHIVO DOCUMENTAL EXCEL / PDF</text>
+<rect x="1638" y="149" width="490" height="38" rx="10" fill="#c99612"/>
+<text x="1652" y="174" fill="#102542" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" letter-spacing=".6">CATÁLOGOS Y CIERRE DE GESTIÓN</text>
+<rect x="2164" y="149" width="490" height="38" rx="10" fill="#102542"/>
+<text x="2178" y="174" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" letter-spacing=".6">USUARIOS Y SEGURIDAD</text>
+<rect x="2690" y="149" width="490" height="38" rx="10" fill="#173963"/>
+<text x="2704" y="174" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" letter-spacing=".6">ROLES Y PERMISOS</text>
+<g id="relaciones-fk" fill="none" stroke="#6c87a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#crow)" opacity=".78"><path d="M305 387 V415"/><path d="M305 627 V655"/><path d="M305 823 V851"/><path d="M305 1305 V1333"/><path d="M1357 387 V415"/><path d="M1357 671 V699"/><path d="M1883 365 V393"/><path d="M550 1078 H568 V350 H586"/><path d="M550 1080 H568 V1200 H586"/><path d="M550 1080 H568 V1450 H586"/><path d="M550 1078 H568 V640 H586"/><path d="M1076 900 H1094 V1200 H1076"/><path d="M1076 320 H1094 V1200 H1076"/><path d="M1638 270 H1620 V545 H1602"/><path d="M2410 343 V371"/><path d="M2164 255 H2154 V684 H2164"/><path d="M2164 255 H2154 V1080 H2164"/><path d="M2164 255 H2154 V1305 H2164"/><path d="M2654 255 H2672 V650 H2690"/><path d="M2690 255 H2680 V650 H2690"/><path d="M3180 255 H3198 V850 H3180"/><path d="M3180 450 H3190 V850 H3180"/></g><g filter="url(#shadow)"><rect x="60" y="175" width="490" height="212" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M61 187 Q61 176 73 176 H537 Q549 176 549 187 V223 H61Z" fill="#20539a"/></g>
+<text x="74" y="205" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_importaciones</text>
+<circle cx="77" cy="235" r="3" fill="#173963"/>
+<text x="88" y="239" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="77" cy="257" r="3" fill="#9f730c"/>
+<text x="88" y="261" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ archivo_sha256</text>
+<circle cx="77" cy="279" r="3" fill="#42536a"/>
+<text x="88" y="283" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">archivo_nombre</text>
+<circle cx="77" cy="301" r="3" fill="#42536a"/>
+<text x="88" y="305" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">archivo_original · bytea</text>
+<circle cx="77" cy="323" r="3" fill="#42536a"/>
+<text x="88" y="327" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">resumen · jsonb</text>
+<circle cx="77" cy="345" r="3" fill="#42536a"/>
+<text x="88" y="349" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">creado_en</text>
+<g filter="url(#shadow)"><rect x="60" y="415" width="490" height="212" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M61 427 Q61 416 73 416 H537 Q549 416 549 427 V463 H61Z" fill="#20539a"/></g>
+<text x="74" y="445" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_hojas_importadas</text>
+<circle cx="77" cy="475" r="3" fill="#173963"/>
+<text x="88" y="479" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="77" cy="497" r="3" fill="#20539a"/>
+<text x="88" y="501" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK importacion_id → act_importaciones</text>
+<circle cx="77" cy="519" r="3" fill="#42536a"/>
+<text x="88" y="523" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">nombre · orden</text>
+<circle cx="77" cy="541" r="3" fill="#42536a"/>
+<text x="88" y="545" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">tipo · vigencia</text>
+<circle cx="77" cy="563" r="3" fill="#42536a"/>
+<text x="88" y="567" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">filas_con_datos</text>
+<circle cx="77" cy="585" r="3" fill="#42536a"/>
+<text x="88" y="589" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">registros_activos</text>
+<g filter="url(#shadow)"><rect x="60" y="655" width="490" height="168" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M61 667 Q61 656 73 656 H537 Q549 656 549 667 V703 H61Z" fill="#20539a"/></g>
+<text x="74" y="685" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_filas_importadas</text>
+<circle cx="77" cy="715" r="3" fill="#173963"/>
+<text x="88" y="719" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="77" cy="737" r="3" fill="#20539a"/>
+<text x="88" y="741" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK hoja_id → act_hojas_importadas</text>
+<circle cx="77" cy="759" r="3" fill="#42536a"/>
+<text x="88" y="763" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">fila_excel</text>
+<circle cx="77" cy="781" r="3" fill="#42536a"/>
+<text x="88" y="785" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">celdas · jsonb</text>
+<g filter="url(#shadow)"><rect x="60" y="851" width="490" height="454" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M61 863 Q61 852 73 852 H537 Q549 852 549 863 V899 H61Z" fill="#20539a"/></g>
+<text x="74" y="881" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_activos</text>
+<circle cx="77" cy="911" r="3" fill="#173963"/>
+<text x="88" y="915" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="77" cy="933" r="3" fill="#9f730c"/>
+<text x="88" y="937" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ/FK fila_origen_id → act_filas_importadas</text>
+<circle cx="77" cy="955" r="3" fill="#42536a"/>
+<text x="88" y="959" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">origen · numero_origen</text>
+<circle cx="77" cy="977" r="3" fill="#42536a"/>
+<text x="88" y="981" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">codigo · codigo_historico</text>
+<circle cx="77" cy="999" r="3" fill="#42536a"/>
+<text x="88" y="1003" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">descripcion · estado</text>
+<circle cx="77" cy="1021" r="3" fill="#42536a"/>
+<text x="88" y="1025" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">ubicacion · regional · responsable</text>
+<circle cx="77" cy="1043" r="3" fill="#42536a"/>
+<text x="88" y="1047" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">acta · observaciones · comentario</text>
+<circle cx="77" cy="1065" r="3" fill="#42536a"/>
+<text x="88" y="1069" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">grupo_contable · grupo_contable_codigo</text>
+<circle cx="77" cy="1087" r="3" fill="#42536a"/>
+<text x="88" y="1091" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">auxiliar_grupo · auxiliar_grupo_alterno</text>
+<circle cx="77" cy="1109" r="3" fill="#42536a"/>
+<text x="88" y="1113" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">vida_util · porcentaje_depreciacion</text>
+<circle cx="77" cy="1131" r="3" fill="#42536a"/>
+<text x="88" y="1135" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">costo_historico · costo_migrado</text>
+<circle cx="77" cy="1153" r="3" fill="#42536a"/>
+<text x="88" y="1157" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">costo_final_actualizado</text>
+<circle cx="77" cy="1175" r="3" fill="#42536a"/>
+<text x="88" y="1179" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">depreciacion_gestion · depreciacion_acumulada</text>
+<circle cx="77" cy="1197" r="3" fill="#42536a"/>
+<text x="88" y="1201" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">valor_neto · fechas historicas/migracion</text>
+<circle cx="77" cy="1219" r="3" fill="#42536a"/>
+<text x="88" y="1223" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">indicador_r · rube</text>
+<circle cx="77" cy="1241" r="3" fill="#42536a"/>
+<text x="88" y="1245" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">incidencias_importacion · jsonb</text>
+<circle cx="77" cy="1263" r="3" fill="#42536a"/>
+<text x="88" y="1267" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">creado_en</text>
+<g filter="url(#shadow)"><rect x="60" y="1333" width="490" height="146" rx="12" fill="white" stroke="#9bb9dc" stroke-width="1.5" stroke-dasharray="7 5"/><path d="M61 1345 Q61 1334 73 1334 H537 Q549 1334 549 1345 V1381 H61Z" fill="#20539a"/></g>
+<text x="74" y="1363" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_inventario_vigente · VISTA</text>
+<circle cx="77" cy="1393" r="3" fill="#42536a"/>
+<text x="88" y="1397" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">Consulta activos de hojas con vigencia = vigente</text>
+<circle cx="77" cy="1415" r="3" fill="#42536a"/>
+<text x="88" y="1419" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">Incluye fila_excel y hoja_origen</text>
+<circle cx="77" cy="1437" r="3" fill="#42536a"/>
+<text x="88" y="1441" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">Basada en act_activos + filas + hojas</text>
+<g filter="url(#shadow)"><rect x="586" y="175" width="490" height="366" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M587 187 Q587 176 599 176 H1063 Q1075 176 1075 187 V223 H587Z" fill="#173963"/></g>
+<text x="600" y="205" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_asignaciones</text>
+<circle cx="603" cy="235" r="3" fill="#173963"/>
+<text x="614" y="239" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="603" cy="257" r="3" fill="#9f730c"/>
+<text x="614" y="261" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ solicitud_id</text>
+<circle cx="603" cy="279" r="3" fill="#20539a"/>
+<text x="614" y="283" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK activo_id → act_activos</text>
+<circle cx="603" cy="301" r="3" fill="#42536a"/>
+<text x="614" y="305" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">tipo · enum fija/momentanea</text>
+<circle cx="603" cy="323" r="3" fill="#42536a"/>
+<text x="614" y="327" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">estado · enum activa/devuelta/reemplazada</text>
+<circle cx="603" cy="345" r="3" fill="#42536a"/>
+<text x="614" y="349" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">responsable_destino · ubicacion_destino</text>
+<circle cx="603" cy="367" r="3" fill="#42536a"/>
+<text x="614" y="371" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">responsable_anterior · ubicacion_anterior</text>
+<circle cx="603" cy="389" r="3" fill="#42536a"/>
+<text x="614" y="393" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">fecha_inicio · fecha_devolucion_prevista</text>
+<circle cx="603" cy="411" r="3" fill="#42536a"/>
+<text x="614" y="415" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">fecha_cierre · motivo</text>
+<circle cx="603" cy="433" r="3" fill="#42536a"/>
+<text x="614" y="437" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">referencia_acta · motivo_cierre</text>
+<circle cx="603" cy="455" r="3" fill="#20539a"/>
+<text x="614" y="459" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK creado_por → users</text>
+<circle cx="603" cy="477" r="3" fill="#20539a"/>
+<text x="614" y="481" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK cerrado_por → users</text>
+<circle cx="603" cy="499" r="3" fill="#42536a"/>
+<text x="614" y="503" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">eliminado_en · creado_en</text>
+<g filter="url(#shadow)"><rect x="586" y="569" width="490" height="146" rx="12" fill="white" stroke="#9bb9dc" stroke-width="1.5" stroke-dasharray="7 5"/><path d="M587 581 Q587 570 599 570 H1063 Q1075 570 1075 581 V617 H587Z" fill="#173963"/></g>
+<text x="600" y="599" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_custodia_actual · VISTA</text>
+<circle cx="603" cy="629" r="3" fill="#42536a"/>
+<text x="614" y="633" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">Combina inventario vigente y asignaciones activas</text>
+<circle cx="603" cy="651" r="3" fill="#42536a"/>
+<text x="614" y="655" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">Prioriza momentánea sobre fija</text>
+<circle cx="603" cy="673" r="3" fill="#42536a"/>
+<text x="614" y="677" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">Entrega responsable/ubicación y plazo actual</text>
+<g filter="url(#shadow)"><rect x="586" y="743" width="490" height="344" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M587 755 Q587 744 599 744 H1063 Q1075 744 1075 755 V791 H587Z" fill="#173963"/></g>
+<text x="600" y="773" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_actas</text>
+<circle cx="603" cy="803" r="3" fill="#173963"/>
+<text x="614" y="807" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="603" cy="825" r="3" fill="#9f730c"/>
+<text x="614" y="829" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ solicitud_id</text>
+<circle cx="603" cy="847" r="3" fill="#42536a"/>
+<text x="614" y="851" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">solicitud_hash · numero (serial)</text>
+<circle cx="603" cy="869" r="3" fill="#42536a"/>
+<text x="614" y="873" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">procedencia_serie · gestion_serie</text>
+<circle cx="603" cy="891" r="3" fill="#42536a"/>
+<text x="614" y="895" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">tipo · fecha</text>
+<circle cx="603" cy="913" r="3" fill="#42536a"/>
+<text x="614" y="917" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">cabecera · jsonb</text>
+<circle cx="603" cy="935" r="3" fill="#42536a"/>
+<text x="614" y="939" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">bienes · jsonb</text>
+<circle cx="603" cy="957" r="3" fill="#42536a"/>
+<text x="614" y="961" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">documento_pdf · bytea</text>
+<circle cx="603" cy="979" r="3" fill="#42536a"/>
+<text x="614" y="983" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">pdf_sha256</text>
+<circle cx="603" cy="1001" r="3" fill="#20539a"/>
+<text x="614" y="1005" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK creado_por → users</text>
+<circle cx="603" cy="1023" r="3" fill="#42536a"/>
+<text x="614" y="1027" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">creado_en</text>
+<circle cx="603" cy="1045" r="3" fill="#9f730c"/>
+<text x="614" y="1049" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ serie + gestión + tipo + número</text>
+<g filter="url(#shadow)"><rect x="586" y="1115" width="490" height="190" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M587 1127 Q587 1116 599 1116 H1063 Q1075 1116 1075 1127 V1163 H587Z" fill="#173963"/></g>
+<text x="600" y="1145" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_acta_bienes</text>
+<circle cx="603" cy="1175" r="3" fill="#173963"/>
+<text x="614" y="1179" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="603" cy="1197" r="3" fill="#20539a"/>
+<text x="614" y="1201" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK acta_id → act_actas</text>
+<circle cx="603" cy="1219" r="3" fill="#20539a"/>
+<text x="614" y="1223" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK activo_id → act_activos</text>
+<circle cx="603" cy="1241" r="3" fill="#20539a"/>
+<text x="614" y="1245" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK asignacion_id → act_asignaciones</text>
+<circle cx="603" cy="1263" r="3" fill="#9f730c"/>
+<text x="614" y="1267" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ acta_id + activo_id</text>
+<g filter="url(#shadow)"><rect x="586" y="1333" width="490" height="234" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M587 1345 Q587 1334 599 1334 H1063 Q1075 1334 1075 1345 V1381 H587Z" fill="#173963"/></g>
+<text x="600" y="1363" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_mantenimientos_vehiculos</text>
+<circle cx="603" cy="1393" r="3" fill="#173963"/>
+<text x="614" y="1397" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="603" cy="1415" r="3" fill="#20539a"/>
+<text x="614" y="1419" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK activo_id → act_activos</text>
+<circle cx="603" cy="1437" r="3" fill="#42536a"/>
+<text x="614" y="1441" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">fecha · kilometraje</text>
+<circle cx="603" cy="1459" r="3" fill="#42536a"/>
+<text x="614" y="1463" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">descripcion · taller · unidad</text>
+<circle cx="603" cy="1481" r="3" fill="#42536a"/>
+<text x="614" y="1485" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">factura · importe · observaciones</text>
+<circle cx="603" cy="1503" r="3" fill="#20539a"/>
+<text x="614" y="1507" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK registrado_por → users</text>
+<circle cx="603" cy="1525" r="3" fill="#42536a"/>
+<text x="614" y="1529" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">creado_en</text>
+<g filter="url(#shadow)"><rect x="1112" y="175" width="490" height="212" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M1113 187 Q1113 176 1125 176 H1589 Q1601 176 1601 187 V223 H1113Z" fill="#20539a"/></g>
+<text x="1126" y="205" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_archivos_actas</text>
+<circle cx="1129" cy="235" r="3" fill="#173963"/>
+<text x="1140" y="239" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="1129" cy="257" r="3" fill="#42536a"/>
+<text x="1140" y="261" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">nombre</text>
+<circle cx="1129" cy="279" r="3" fill="#9f730c"/>
+<text x="1140" y="283" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ sha256</text>
+<circle cx="1129" cy="301" r="3" fill="#42536a"/>
+<text x="1140" y="305" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">original · bytea</text>
+<circle cx="1129" cy="323" r="3" fill="#42536a"/>
+<text x="1140" y="327" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">resumen · jsonb</text>
+<circle cx="1129" cy="345" r="3" fill="#42536a"/>
+<text x="1140" y="349" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">creado_en</text>
+<g filter="url(#shadow)"><rect x="1112" y="415" width="490" height="256" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M1113 427 Q1113 416 1125 416 H1589 Q1601 416 1601 427 V463 H1113Z" fill="#20539a"/></g>
+<text x="1126" y="445" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_documentos_archivo</text>
+<circle cx="1129" cy="475" r="3" fill="#173963"/>
+<text x="1140" y="479" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="1129" cy="497" r="3" fill="#20539a"/>
+<text x="1140" y="501" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK archivo_id → act_archivos_actas</text>
+<circle cx="1129" cy="519" r="3" fill="#42536a"/>
+<text x="1140" y="523" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">hoja · bloque · procedencia</text>
+<circle cx="1129" cy="541" r="3" fill="#42536a"/>
+<text x="1140" y="545" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">tipo · numero · fecha</text>
+<circle cx="1129" cy="563" r="3" fill="#20539a"/>
+<text x="1140" y="567" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK responsable_id → act_responsables</text>
+<circle cx="1129" cy="585" r="3" fill="#42536a"/>
+<text x="1140" y="589" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">version · eliminado_en</text>
+<circle cx="1129" cy="607" r="3" fill="#42536a"/>
+<text x="1140" y="611" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">responsable_original</text>
+<circle cx="1129" cy="629" r="3" fill="#42536a"/>
+<text x="1140" y="633" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">documento · jsonb</text>
+<g filter="url(#shadow)"><rect x="1112" y="699" width="490" height="234" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M1113 711 Q1113 700 1125 700 H1589 Q1601 700 1601 711 V747 H1113Z" fill="#20539a"/></g>
+<text x="1126" y="729" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_archivo_pdf</text>
+<circle cx="1129" cy="759" r="3" fill="#173963"/>
+<text x="1140" y="763" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK/FK documento_id → act_documentos_archivo</text>
+<circle cx="1129" cy="781" r="3" fill="#42536a"/>
+<text x="1140" y="785" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">numero · tipo · fecha</text>
+<circle cx="1129" cy="803" r="3" fill="#42536a"/>
+<text x="1140" y="807" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">ciudad · departamento · regional · ambito</text>
+<circle cx="1129" cy="825" r="3" fill="#42536a"/>
+<text x="1140" y="829" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">observaciones · jsonb</text>
+<circle cx="1129" cy="847" r="3" fill="#42536a"/>
+<text x="1140" y="851" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">area_impresion · fuente_sha256</text>
+<circle cx="1129" cy="869" r="3" fill="#42536a"/>
+<text x="1140" y="873" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">pdf_original · bytea · pdf_sha256</text>
+<circle cx="1129" cy="891" r="3" fill="#42536a"/>
+<text x="1140" y="895" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">motor · creado_en</text>
+<g filter="url(#shadow)"><rect x="1638" y="175" width="490" height="190" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M1639 187 Q1639 176 1651 176 H2115 Q2127 176 2127 187 V223 H1639Z" fill="#c99612"/></g>
+<text x="1652" y="205" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_responsables</text>
+<circle cx="1655" cy="235" r="3" fill="#173963"/>
+<text x="1666" y="239" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · uuid</text>
+<circle cx="1655" cy="257" r="3" fill="#9f730c"/>
+<text x="1666" y="261" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ nombre</text>
+<circle cx="1655" cy="279" r="3" fill="#42536a"/>
+<text x="1666" y="283" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">cargo · oficina</text>
+<circle cx="1655" cy="301" r="3" fill="#42536a"/>
+<text x="1666" y="305" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">telefono · correo</text>
+<circle cx="1655" cy="323" r="3" fill="#42536a"/>
+<text x="1666" y="327" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">eliminado_en · creado_en</text>
+<g filter="url(#shadow)"><rect x="1638" y="393" width="490" height="124" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M1639 405 Q1639 394 1651 394 H2115 Q2127 394 2127 405 V441 H1639Z" fill="#c99612"/></g>
+<text x="1652" y="423" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_responsable_nombres</text>
+<circle cx="1655" cy="453" r="3" fill="#173963"/>
+<text x="1666" y="457" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK clave · texto</text>
+<circle cx="1655" cy="475" r="3" fill="#20539a"/>
+<text x="1666" y="479" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK responsable_id → act_responsables</text>
+<g filter="url(#shadow)"><rect x="1638" y="545" width="490" height="168" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M1639 557 Q1639 546 1651 546 H2115 Q2127 546 2127 557 V593 H1639Z" fill="#c99612"/></g>
+<text x="1652" y="575" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_procedencias</text>
+<circle cx="1655" cy="605" r="3" fill="#173963"/>
+<text x="1666" y="609" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK clave</text>
+<circle cx="1655" cy="627" r="3" fill="#9f730c"/>
+<text x="1666" y="631" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ nombre · prefijo</text>
+<circle cx="1655" cy="649" r="3" fill="#42536a"/>
+<text x="1666" y="653" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">activa · version</text>
+<circle cx="1655" cy="671" r="3" fill="#42536a"/>
+<text x="1666" y="675" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">creado_en</text>
+<g filter="url(#shadow)"><rect x="1638" y="741" width="490" height="146" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M1639 753 Q1639 742 1651 742 H2115 Q2127 742 2127 753 V789 H1639Z" fill="#c99612"/></g>
+<text x="1652" y="771" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_gestion_activa</text>
+<circle cx="1655" cy="801" r="3" fill="#173963"/>
+<text x="1666" y="805" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · int (id = 1)</text>
+<circle cx="1655" cy="823" r="3" fill="#42536a"/>
+<text x="1666" y="827" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">gestion</text>
+<circle cx="1655" cy="845" r="3" fill="#42536a"/>
+<text x="1666" y="849" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">cerrada_en · actualizada_en</text>
+<g filter="url(#shadow)"><rect x="1638" y="915" width="490" height="168" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M1639 927 Q1639 916 1651 916 H2115 Q2127 916 2127 927 V963 H1639Z" fill="#c99612"/></g>
+<text x="1652" y="945" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">act_gestiones_historial</text>
+<circle cx="1655" cy="975" r="3" fill="#173963"/>
+<text x="1666" y="979" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK gestion · int</text>
+<circle cx="1655" cy="997" r="3" fill="#42536a"/>
+<text x="1666" y="1001" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">estado · iniciada_en</text>
+<circle cx="1655" cy="1019" r="3" fill="#42536a"/>
+<text x="1666" y="1023" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">cerrada_en</text>
+<circle cx="1655" cy="1041" r="3" fill="#20539a"/>
+<text x="1666" y="1045" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK cerrada_por → users</text>
+<g filter="url(#shadow)"><rect x="2164" y="175" width="490" height="168" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2165 187 Q2165 176 2177 176 H2641 Q2653 176 2653 187 V223 H2165Z" fill="#102542"/></g>
+<text x="2178" y="205" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">users</text>
+<circle cx="2181" cy="235" r="3" fill="#173963"/>
+<text x="2192" y="239" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id · texto</text>
+<circle cx="2181" cy="257" r="3" fill="#42536a"/>
+<text x="2192" y="261" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">name · UQ email</text>
+<circle cx="2181" cy="279" r="3" fill="#42536a"/>
+<text x="2192" y="283" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">email_verified · image · is_active</text>
+<circle cx="2181" cy="301" r="3" fill="#42536a"/>
+<text x="2192" y="305" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">created_at · updated_at</text>
+<g filter="url(#shadow)"><rect x="2164" y="371" width="490" height="190" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2165 383 Q2165 372 2177 372 H2641 Q2653 372 2653 383 V419 H2165Z" fill="#102542"/></g>
+<text x="2178" y="401" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">sessions</text>
+<circle cx="2181" cy="431" r="3" fill="#173963"/>
+<text x="2192" y="435" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id</text>
+<circle cx="2181" cy="453" r="3" fill="#20539a"/>
+<text x="2192" y="457" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK user_id → users</text>
+<circle cx="2181" cy="475" r="3" fill="#9f730c"/>
+<text x="2192" y="479" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ token · expires_at</text>
+<circle cx="2181" cy="497" r="3" fill="#42536a"/>
+<text x="2192" y="501" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">ip_address · user_agent</text>
+<circle cx="2181" cy="519" r="3" fill="#42536a"/>
+<text x="2192" y="523" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">created_at · updated_at</text>
+<g filter="url(#shadow)"><rect x="2164" y="589" width="490" height="190" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2165 601 Q2165 590 2177 590 H2641 Q2653 590 2653 601 V637 H2165Z" fill="#102542"/></g>
+<text x="2178" y="619" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">accounts</text>
+<circle cx="2181" cy="649" r="3" fill="#173963"/>
+<text x="2192" y="653" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id</text>
+<circle cx="2181" cy="671" r="3" fill="#20539a"/>
+<text x="2192" y="675" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK user_id → users</text>
+<circle cx="2181" cy="693" r="3" fill="#42536a"/>
+<text x="2192" y="697" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">account_id · provider_id</text>
+<circle cx="2181" cy="715" r="3" fill="#42536a"/>
+<text x="2192" y="719" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">tokens · expiraciones · scope</text>
+<circle cx="2181" cy="737" r="3" fill="#42536a"/>
+<text x="2192" y="741" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">password · created_at · updated_at</text>
+<g filter="url(#shadow)"><rect x="2164" y="807" width="490" height="146" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2165 819 Q2165 808 2177 808 H2641 Q2653 808 2653 819 V855 H2165Z" fill="#102542"/></g>
+<text x="2178" y="837" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">verifications</text>
+<circle cx="2181" cy="867" r="3" fill="#173963"/>
+<text x="2192" y="871" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id</text>
+<circle cx="2181" cy="889" r="3" fill="#42536a"/>
+<text x="2192" y="893" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">identifier · value · expires_at</text>
+<circle cx="2181" cy="911" r="3" fill="#42536a"/>
+<text x="2192" y="915" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">created_at · updated_at</text>
+<g filter="url(#shadow)"><rect x="2164" y="981" width="490" height="212" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2165 993 Q2165 982 2177 982 H2641 Q2653 982 2653 993 V1029 H2165Z" fill="#102542"/></g>
+<text x="2178" y="1011" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">audit_logs</text>
+<circle cx="2181" cy="1041" r="3" fill="#173963"/>
+<text x="2192" y="1045" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id</text>
+<circle cx="2181" cy="1063" r="3" fill="#20539a"/>
+<text x="2192" y="1067" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK user_id → users (SET NULL)</text>
+<circle cx="2181" cy="1085" r="3" fill="#42536a"/>
+<text x="2192" y="1089" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">action · module · entity · entity_id</text>
+<circle cx="2181" cy="1107" r="3" fill="#42536a"/>
+<text x="2192" y="1111" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">ip_address · user_agent</text>
+<circle cx="2181" cy="1129" r="3" fill="#42536a"/>
+<text x="2192" y="1133" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">result · enum audit_result</text>
+<circle cx="2181" cy="1151" r="3" fill="#42536a"/>
+<text x="2192" y="1155" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">details · jsonb · created_at</text>
+<g filter="url(#shadow)"><rect x="2164" y="1221" width="490" height="168" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2165 1233 Q2165 1222 2177 1222 H2641 Q2653 1222 2653 1233 V1269 H2165Z" fill="#102542"/></g>
+<text x="2178" y="1251" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">notificaciones</text>
+<circle cx="2181" cy="1281" r="3" fill="#173963"/>
+<text x="2192" y="1285" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id</text>
+<circle cx="2181" cy="1303" r="3" fill="#20539a"/>
+<text x="2192" y="1307" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK user_id → users (CASCADE)</text>
+<circle cx="2181" cy="1325" r="3" fill="#42536a"/>
+<text x="2192" y="1329" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">module · title · message · link</text>
+<circle cx="2181" cy="1347" r="3" fill="#42536a"/>
+<text x="2192" y="1351" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">is_read · created_at</text>
+<g filter="url(#shadow)"><rect x="2690" y="175" width="490" height="168" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2691 187 Q2691 176 2703 176 H3167 Q3179 176 3179 187 V223 H2691Z" fill="#173963"/></g>
+<text x="2704" y="205" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">roles</text>
+<circle cx="2707" cy="235" r="3" fill="#173963"/>
+<text x="2718" y="239" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id</text>
+<circle cx="2707" cy="257" r="3" fill="#9f730c"/>
+<text x="2718" y="261" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ name</text>
+<circle cx="2707" cy="279" r="3" fill="#42536a"/>
+<text x="2718" y="283" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">description · is_system</text>
+<circle cx="2707" cy="301" r="3" fill="#42536a"/>
+<text x="2718" y="305" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">created_at · updated_at</text>
+<g filter="url(#shadow)"><rect x="2690" y="371" width="490" height="168" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2691 383 Q2691 372 2703 372 H3167 Q3179 372 3179 383 V419 H2691Z" fill="#173963"/></g>
+<text x="2704" y="401" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">permissions</text>
+<circle cx="2707" cy="431" r="3" fill="#173963"/>
+<text x="2718" y="435" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK id</text>
+<circle cx="2707" cy="453" r="3" fill="#9f730c"/>
+<text x="2718" y="457" fill="#9f730c" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">UQ key</text>
+<circle cx="2707" cy="475" r="3" fill="#42536a"/>
+<text x="2718" y="479" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">module · description</text>
+<circle cx="2707" cy="497" r="3" fill="#42536a"/>
+<text x="2718" y="501" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">created_at</text>
+<g filter="url(#shadow)"><rect x="2690" y="567" width="490" height="168" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2691 579 Q2691 568 2703 568 H3167 Q3179 568 3179 579 V615 H2691Z" fill="#173963"/></g>
+<text x="2704" y="597" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">user_roles</text>
+<circle cx="2707" cy="627" r="3" fill="#173963"/>
+<text x="2718" y="631" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK (user_id, role_id)</text>
+<circle cx="2707" cy="649" r="3" fill="#20539a"/>
+<text x="2718" y="653" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK user_id → users (CASCADE)</text>
+<circle cx="2707" cy="671" r="3" fill="#20539a"/>
+<text x="2718" y="675" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK role_id → roles (CASCADE)</text>
+<circle cx="2707" cy="693" r="3" fill="#42536a"/>
+<text x="2718" y="697" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">created_at</text>
+<g filter="url(#shadow)"><rect x="2690" y="763" width="490" height="146" rx="12" fill="white" stroke="#d6e0ed" stroke-width="1.5" /><path d="M2691 775 Q2691 764 2703 764 H3167 Q3179 764 3179 775 V811 H2691Z" fill="#173963"/></g>
+<text x="2704" y="793" fill="white" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="800">role_permissions</text>
+<circle cx="2707" cy="823" r="3" fill="#173963"/>
+<text x="2718" y="827" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">PK (role_id, permission_id)</text>
+<circle cx="2707" cy="845" r="3" fill="#20539a"/>
+<text x="2718" y="849" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK role_id → roles (CASCADE)</text>
+<circle cx="2707" cy="867" r="3" fill="#20539a"/>
+<text x="2718" y="871" fill="#20539a" font-family="Inter,Segoe UI,sans-serif" font-size="10.5">FK permission_id → permissions (CASCADE)</text>
+<rect x="60" y="1577" width="3200" height="55" rx="12" fill="#e5edf7"/>
+<text x="78" y="1600" fill="#102542" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="700">LEYENDA</text>
+<text x="160" y="1600" fill="#173963" font-family="Inter,Segoe UI,sans-serif" font-size="12">PK = clave primaria · FK = clave foránea · UQ = único · Flechas = relaciones entre tablas · Vistas con borde discontinuo</text>
+<text x="78" y="1620" fill="#42536a" font-family="Inter,Segoe UI,sans-serif" font-size="11">Las referencias FK muestran tabla destino. El repositorio actual define los módulos de activos; no contiene tablas implementadas para almacenes ni conciliaciones.</text>
+<rect x="0" y="1645" width="3320" height="65" fill="#102542"/><rect x="0" y="1645" width="3320" height="4" fill="#fecc36"/>
+<text x="60" y="1684" fill="#ffffff" font-family="Inter,Segoe UI,sans-serif" font-size="15" font-weight="700">Pasante: MARIA STEFANY PAREDES CONDORI</text>
+<text x="3260" y="1684" text-anchor="end" fill="#fecc36" font-family="Inter,Segoe UI,sans-serif" font-size="15" font-weight="700">CEL: 78948640</text>
+</svg>

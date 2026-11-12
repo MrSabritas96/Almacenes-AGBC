@@ -33,6 +33,7 @@ export const devolucionAsignacionSchema = z.object({
   asignacionId: z.uuid("La asignación no es válida."),
   fechaCierre: fechaValida,
   motivoCierre: z.string().trim().min(5, "Describe la devolución (al menos 5 caracteres).").max(2000),
+  recibirEnAlmacenes: z.boolean().optional(),
 });
 
 export type NuevaAsignacion = z.infer<typeof nuevaAsignacionSchema>;

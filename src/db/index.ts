@@ -15,12 +15,19 @@ function createPool(): Pool {
   if (!connectionString) {
     throw new Error("DATABASE_URL no está definida. Copia .env.example a .env");
   }
-  return new Pool({
+  const connectionPool = new Pool({
     connectionString,
     max: Number(process.env.DB_POOL_MAX ?? 10),
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
+    idleTimeoutMillis: 300_000,
+    connectionTimeoutMillis: 15_000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10_000,
   });
+  // Un fallo de una conexión inactiva no debe cerrar el servidor.
+  connectionPool.on("error", (error) => {
+    console.error("[db] Conexión inactiva interrumpida:", error.message);
+  });
+  return connectionPool;
 }
 
 export const pool = globalForDb.__pgPool ?? createPool();

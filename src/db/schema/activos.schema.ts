@@ -1,6 +1,6 @@
 import type { DocumentoArchivo } from "@/actions/activos/archivo-modelo";
 import { eq, getTableColumns, sql } from "drizzle-orm";
-import { check, customType, date, index, integer, jsonb, numeric, pgEnum, pgTable, pgView, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, customType, date, index, integer, jsonb, numeric, pgEnum, pgTable, pgView, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import type { ActaBien, ActaCabecera } from "@/actions/activos/actas-modelo";
 import { users } from "./auth.schema";
 
@@ -46,6 +46,7 @@ export const actActivos = pgTable("act_activos", {
   descripcion: text("descripcion").notNull(),
   estado: text("estado"),
   ubicacion: text("ubicacion"),
+  regional: text("regional"),
   responsable: text("responsable"),
   acta: text("acta"), // El Excel también contiene MOM6, x y otras referencias textuales.
   observaciones: text("observaciones"),
@@ -91,6 +92,7 @@ export const actEstadoAsignacion = pgEnum("act_estado_asignacion", ["activa", "d
 export const actAsignaciones = pgTable("act_asignaciones", {
   id: uuid("id").primaryKey().defaultRandom(),
   solicitudId: uuid("solicitud_id").notNull().unique(),
+  eliminadoEn: timestamp("eliminado_en", { withTimezone: true }),
   activoId: uuid("activo_id").notNull().references(() => actActivos.id),
   tipo: actTipoAsignacion("tipo").notNull(),
   estado: actEstadoAsignacion("estado").notNull().default("activa"),
@@ -108,7 +110,7 @@ export const actAsignaciones = pgTable("act_asignaciones", {
   cerradoPor: text("cerrado_por").references(() => users.id),
   creadoEn: timestamp("creado_en", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
-  uniqueIndex("act_asignacion_activa_tipo_uq").on(t.activoId, t.tipo).where(sql`${t.estado} = 'activa'`),
+  uniqueIndex("act_asignacion_activa_tipo_uq").on(t.activoId, t.tipo).where(sql`${t.estado} = 'activa' AND ${t.eliminadoEn} IS NULL`),
   index("act_asignaciones_activo_idx").on(t.activoId, t.creadoEn),
   index("act_asignaciones_estado_fecha_idx").on(t.estado, t.fechaDevolucionPrevista),
   check("act_asignacion_destino_ck", sql`length(trim(${t.responsableDestino})) > 0 AND length(trim(${t.ubicacionDestino})) > 0 AND length(trim(${t.motivo})) > 0`),
@@ -132,18 +134,19 @@ export const actCustodiaActual = pgView("act_custodia_actual", {
     COALESCE(m.id, f.id) AS asignacion_id, COALESCE(m.tipo, f.tipo)::text AS asignacion_tipo,
     m.fecha_devolucion_prevista
   FROM ${actInventarioVigente} v
-  LEFT JOIN ${actAsignaciones} m ON m.activo_id = v.id AND m.tipo = 'momentanea' AND m.estado = 'activa'
-  LEFT JOIN ${actAsignaciones} f ON f.activo_id = v.id AND f.tipo = 'fija' AND f.estado = 'activa'
+  LEFT JOIN ${actAsignaciones} m ON m.activo_id = v.id AND m.tipo = 'momentanea' AND m.estado = 'activa' AND m.eliminado_en IS NULL
+  LEFT JOIN ${actAsignaciones} f ON f.activo_id = v.id AND f.tipo = 'fija' AND f.estado = 'activa' AND f.eliminado_en IS NULL
 `);
 
 export const actActas = pgTable("act_actas", {
   id:uuid("id").primaryKey().defaultRandom(), solicitudId:uuid("solicitud_id").notNull().unique(),
-  solicitudHash:text("solicitud_hash").notNull(), numero:serial("numero").notNull().unique(),
+  solicitudHash:text("solicitud_hash").notNull(), numero:serial("numero").notNull(),
+  procedenciaSerie:text("procedencia_serie"), gestionSerie:integer("gestion_serie"),
   tipo:text("tipo").$type<"fija"|"momentanea"|"devolucion">().notNull(), fecha:date("fecha").notNull(),
   cabecera:jsonb("cabecera").$type<ActaCabecera>().notNull(), bienes:jsonb("bienes").$type<ActaBien[]>().notNull(),
   documentoPdf:bytea("documento_pdf").notNull(), pdfSha256:text("pdf_sha256").notNull(),
   creadoPor:text("creado_por").notNull().references(()=>users.id), creadoEn:timestamp("creado_en",{withTimezone:true}).notNull().defaultNow(),
-},t=>[index("act_actas_fecha_idx").on(t.fecha),check("act_actas_tipo_ck",sql`${t.tipo} IN ('fija','momentanea','devolucion')`)]);
+},t=>[index("act_actas_fecha_idx").on(t.fecha),uniqueIndex("act_actas_serie_tipo_numero_uq").on(t.procedenciaSerie,t.gestionSerie,sql`case when ${t.tipo}='devolucion' then 'devolucion' else 'asignacion' end`,t.numero),check("act_actas_tipo_ck",sql`${t.tipo} IN ('fija','momentanea','devolucion')`)]);
 
 export const actActaBienes=pgTable("act_acta_bienes",{
   id:uuid("id").primaryKey().defaultRandom(), actaId:uuid("acta_id").notNull().references(()=>actActas.id),
@@ -172,5 +175,55 @@ export const actDocumentosArchivo=pgTable("act_documentos_archivo",{
  hoja:text("hoja").notNull(),bloque:text("bloque").notNull(),procedencia:text("procedencia").notNull(),
  tipo:text("tipo").notNull(),numero:text("numero").notNull(),fecha:date("fecha"),
  responsableId:uuid("responsable_id").references(()=>actResponsables.id),
+ version:integer("version").notNull().default(1),eliminadoEn:timestamp("eliminado_en",{withTimezone:true}),
  responsableOriginal:text("responsable_original").notNull(),documento:jsonb("documento").$type<DocumentoArchivo>().notNull(),
 },t=>[uniqueIndex("act_documento_archivo_origen_uq").on(t.archivoId,t.hoja,t.bloque),index("act_documentos_responsable_idx").on(t.responsableId)]);
+
+/** Exportación nativa del acta original y clasificación geográfica, sin alterar su contenido. */
+export const actArchivoPdf = pgTable("act_archivo_pdf", {
+ documentoId: uuid("documento_id").primaryKey().references(()=>actDocumentosArchivo.id),
+ numero: text("numero").notNull(), tipo: text("tipo").notNull(), fecha: date("fecha"),
+ ciudad: text("ciudad").notNull(), departamento: text("departamento").notNull(), regional: text("regional").notNull(),
+ ambito: text("ambito").notNull(), observaciones: jsonb("observaciones").$type<string[]>().notNull(),
+ areaImpresion: text("area_impresion").notNull(), fuenteSha256: text("fuente_sha256").notNull(),
+ pdfOriginal: bytea("pdf_original"), pdfSha256: text("pdf_sha256"), motor: text("motor"),
+ creadoEn: timestamp("creado_en",{withTimezone:true}).notNull().defaultNow(),
+}, t=>[index("act_archivo_pdf_region_idx").on(t.departamento,t.regional,t.tipo)]);
+export const actProcedencias=pgTable("act_procedencias",{
+ clave:text("clave").primaryKey(),nombre:text("nombre").notNull().unique(),prefijo:text("prefijo").notNull().unique(),
+ activa: boolean("activa").notNull().default(true),version:integer("version").notNull().default(1),
+ creadoEn:timestamp("creado_en",{withTimezone:true}).notNull().defaultNow(),
+});
+
+/** Historial de mantenimientos registrados desde el módulo de vehículos. */
+export const actMantenimientosVehiculos = pgTable("act_mantenimientos_vehiculos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  activoId: uuid("activo_id").notNull().references(() => actActivos.id),
+  fecha: date("fecha").notNull(),
+  kilometraje: text("kilometraje"),
+  descripcion: text("descripcion").notNull(),
+  taller: text("taller"),
+  unidad: text("unidad"),
+  factura: text("factura"),
+  importe: text("importe"),
+  observaciones: text("observaciones"),
+  registradoPor: text("registrado_por").notNull().references(() => users.id),
+  creadoEn: timestamp("creado_en", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("act_mantenimientos_vehiculo_fecha_idx").on(t.activoId, t.fecha)]);
+
+/** Gestión habilitada para emitir nuevas actas institucionales. */
+export const actGestionActiva = pgTable("act_gestion_activa", {
+  id: integer("id").primaryKey().default(1),
+  gestion: integer("gestion").notNull(),
+  cerradaEn: timestamp("cerrada_en", { withTimezone: true }),
+  actualizadaEn: timestamp("actualizada_en", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [check("act_gestion_activa_id_ck", sql`${t.id} = 1`), check("act_gestion_activa_anio_ck", sql`${t.gestion} BETWEEN 2000 AND 2100`)]);
+
+/** Historial inmutable de gestiones cerradas y gestión actualmente abierta. */
+export const actGestionesHistorial = pgTable("act_gestiones_historial", {
+  gestion: integer("gestion").primaryKey(),
+  estado: text("estado").notNull().default("activa"),
+  iniciadaEn: timestamp("iniciada_en", { withTimezone: true }).notNull().defaultNow(),
+  cerradaEn: timestamp("cerrada_en", { withTimezone: true }),
+  cerradaPor: text("cerrada_por").references(() => users.id),
+}, (t) => [check("act_gestiones_historial_anio_ck", sql`${t.gestion} BETWEEN 2000 AND 2100`), check("act_gestiones_historial_estado_ck", sql`${t.estado} IN ('activa','cerrada')`), check("act_gestiones_historial_cierre_ck", sql`(${t.estado} = 'activa' AND ${t.cerradaEn} IS NULL AND ${t.cerradaPor} IS NULL) OR (${t.estado} = 'cerrada' AND ${t.cerradaEn} IS NOT NULL AND ${t.cerradaPor} IS NOT NULL)`)]);

@@ -47,7 +47,12 @@ function extract(file) {
   const sha = crypto.createHash('sha256').update(bytes).digest('hex');
   const workbook = XLSX.read(bytes,{type:'buffer',cellNF:true,cellText:true,cellFormula:true});
   const sheets = workbook.SheetNames.map((name,order) => {
-    const sheet=workbook.Sheets[name]; const definition=definitions[name]; const rowMap=new Map();
+    const sheet=workbook.Sheets[name]; let definition=definitions[name]; const rowMap=new Map();
+    // El archivo detallado incorpora REGIONAL y desplaza columnas.
+    if(name==='AGBC' && cellText(sheet.Y1)==='REGIONAL') definition={...definition,cols:{...definition.cols,regional:'Y',ubicacion:'Z',responsable:'AA',rube:'AB',acta:'AC'}};
+    if(name==='EXECOBOL 2024' && cellText(sheet.I1)==='REGIONAL') definition={...definition,cols:{numero_origen:'A',descripcion:'D',auxiliar_grupo:'E',codigo:'F',codigo_historico:'G',estado:'H',regional:'I',ubicacion:'J',responsable:'K',acta:'L'}};
+    if(name==='UPU' && cellText(sheet.F1)==='REGIONAL') definition={...definition,cols:{numero_origen:'A',codigo:'B',descripcion:'C',estado:'D',auxiliar_grupo:'E',regional:'F',ubicacion:'G',responsable:'H',acta:'I',comentario:'J'}};
+    if(name==='UPAEP' && cellText(sheet.D6)==='CODIGO') definition={...definition,cols:{numero_origen:'A',descripcion:'B',auxiliar_grupo:'C',codigo:'D',estado:'E',observaciones:'F',comentario:'G',regional:'H',ubicacion:'I',responsable:'J',acta:'K'}};
     for (const [address,cell] of Object.entries(sheet)) {
       if (address.startsWith('!') || (!Object.hasOwn(cell,'v') && !cell.f)) continue;
       const number=XLSX.utils.decode_cell(address).r+1;
@@ -60,7 +65,7 @@ function extract(file) {
     if(definition) for(const row of rows) {
       if(row.number<definition.start) continue;
       const description=cellText(sheet[`${definition.cols.descripcion}${row.number}`]);
-      if(!description || /^(TOTAL(?:ES)?|DESCRIPCI[OÓ]N|GRUPO CONTABLE)$/i.test(description)) continue;
+      if(typeof sheet[`${definition.cols.descripcion}${row.number}`]?.v !== 'string' || !description || /^(TOTAL(?:ES)?|DESCRIPCI[OÓ]N|GRUPO CONTABLE)$/i.test(description)) continue;
       const issues=[]; const asset={fila_origen_id:row.id,origen:name};
       for(const [field,col] of Object.entries(definition.cols)) {
         const c=sheet[`${col}${row.number}`]; let value=cellText(c);

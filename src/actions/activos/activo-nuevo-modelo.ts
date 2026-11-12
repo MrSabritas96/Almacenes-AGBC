@@ -1,0 +1,6 @@
+import { z } from "zod";
+import { REGIONALES_ACTA } from "./actas-plantilla";
+export const GRUPOS_MANUALES={muebles:"MUEBLES Y ENSERES DE OFICINA",computacion:"EQUIPOS DE COMPUTACION",comunicacion:"EQUIPO DE COMUNICACIONES",oficina:"EQUIPOS DE OFICINA Y OPERACION",vehiculos:"VEHICULOS AUTOMOTORES",educacional:"EQUIPO EDUCACIONAL Y RECREATIVO",instalaciones:"EQUIPO E INSTALACIONES",intangibles:"ACTIVOS INTANGIBLES",herramientas:"HERRAMIENTAS EN GENERAL","por-clasificar":"POR CLASIFICAR"} as const;
+const texto=(max:number)=>z.string().trim().max(max).refine(v=>!/[\x00-\x1f\x7f]/.test(v),"No se permiten caracteres de control.");
+export const nuevoActivoSchema=z.object({solicitudId:z.uuid(),serie:texto(100).min(1,"Selecciona el tipo o serie del bien.").transform(v=>v.toUpperCase()),codigo:texto(120).optional().default(""),descripcion:texto(4000).min(3,"Completa la descripción."),categoria:z.enum(Object.keys(GRUPOS_MANUALES) as [keyof typeof GRUPOS_MANUALES,...(keyof typeof GRUPOS_MANUALES)[]]),origen:texto(80).min(1,"Selecciona una procedencia."),estado:z.enum(["BUENO","REGULAR","MALO"]),regional:z.enum(REGIONALES_ACTA),ubicacion:texto(200).min(2,"Completa la ubicación."),responsableId:z.uuid().nullable(),observaciones:texto(2000)});
+export type NuevoActivo=z.infer<typeof nuevoActivoSchema>;

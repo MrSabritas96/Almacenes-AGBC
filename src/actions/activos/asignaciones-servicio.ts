@@ -1,4 +1,5 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { actActivos, actAsignaciones, actInventarioVigente } from "@/db/schema/activos.schema";
 import { auditLogs } from "@/db/schema/audit.schema";
@@ -25,7 +26,7 @@ export async function registrarAsignacion(input: NuevaAsignacion, ctx: Contexto,
       if (!same) throw new AsignacionError("La solicitud ya fue utilizada. Actualiza la ficha y vuelve a intentarlo.");
       return { id: repetida.id, activoId: repetida.activoId };
     }
-    const activas = await tx.select().from(actAsignaciones).where(and(eq(actAsignaciones.activoId, input.activoId), eq(actAsignaciones.estado, "activa")));
+    const activas = await tx.select().from(actAsignaciones).where(and(eq(actAsignaciones.activoId, input.activoId), eq(actAsignaciones.estado, "activa"), isNull(actAsignaciones.eliminadoEn)));
     const fija = activas.find(a => a.tipo === "fija");
     if (activas.some(a => a.tipo === "momentanea")) throw new AsignacionError("El bien tiene una asignación momentánea activa. Registra primero su devolución.");
     if ((fija?.id ?? null) !== input.asignacionFijaEsperada) throw new AsignacionError("La custodia fija cambió mientras completabas el formulario. Actualiza la ficha.");
@@ -61,7 +62,7 @@ export async function registrarDevolucion(input: DevolucionAsignacion, ctx: Cont
     if (asignacion.estado !== "activa") throw new AsignacionError("La asignación ya fue reemplazada y no puede devolverse.");
     if (input.fechaCierre < asignacion.fechaInicio) throw new AsignacionError("La devolución no puede ser anterior al inicio.");
     if (asignacion.tipo === "fija") {
-      const [temporal] = await tx.select({ id: actAsignaciones.id }).from(actAsignaciones).where(and(eq(actAsignaciones.activoId, asignacion.activoId), eq(actAsignaciones.tipo, "momentanea"), eq(actAsignaciones.estado, "activa")));
+      const [temporal] = await tx.select({ id: actAsignaciones.id }).from(actAsignaciones).where(and(eq(actAsignaciones.activoId, asignacion.activoId), eq(actAsignaciones.tipo, "momentanea"), eq(actAsignaciones.estado, "activa"), isNull(actAsignaciones.eliminadoEn)));
       if (temporal) throw new AsignacionError("Primero devuelve la asignación momentánea para poder finalizar la fija.");
       const [ultimo] = await tx.select({ fecha: actAsignaciones.fechaCierre }).from(actAsignaciones).where(and(eq(actAsignaciones.activoId, asignacion.activoId), sql`${actAsignaciones.fechaCierre} IS NOT NULL`)).orderBy(desc(actAsignaciones.fechaCierre)).limit(1);
       if (ultimo?.fecha && input.fechaCierre < ultimo.fecha) throw new AsignacionError("La devolución no puede ser anterior al último movimiento registrado.");
@@ -69,6 +70,15 @@ export async function registrarDevolucion(input: DevolucionAsignacion, ctx: Cont
     await tx.update(actAsignaciones).set({ estado: "devuelta", fechaCierre: input.fechaCierre, motivoCierre: input.motivoCierre, cerradoPor: ctx.userId }).where(eq(actAsignaciones.id, asignacion.id));
     await tx.insert(auditLogs).values({ userId: ctx.userId, module: "activos", action: "devolver", entity: "act_asignaciones", entityId: asignacion.id,
       ipAddress: ctx.ipAddress, userAgent: ctx.userAgent, details: { activoId: asignacion.activoId, tipo: asignacion.tipo, fechaCierre: input.fechaCierre, motivoCierre: input.motivoCierre } });
-    return { id: asignacion.id, activoId: asignacion.activoId };
+    let asignacionAlmacenesId: string | undefined;
+    if (input.recibirEnAlmacenes) {
+      if (asignacion.tipo === "momentanea") {
+        const [fija] = await tx.select({ id: actAsignaciones.id }).from(actAsignaciones).where(and(eq(actAsignaciones.activoId, asignacion.activoId), eq(actAsignaciones.tipo, "fija"), eq(actAsignaciones.estado, "activa"), isNull(actAsignaciones.eliminadoEn)));
+        if (fija) await registrarDevolucion({ asignacionId: fija.id, fechaCierre: input.fechaCierre, motivoCierre: "Transferencia a Almacenes al recibir la devolución." }, ctx, tx);
+      }
+      const recibida = await registrarAsignacion({ solicitudId: randomUUID(), activoId: asignacion.activoId, asignacionFijaEsperada: null, tipo: "fija", responsableDestino: "ALMACENES", ubicacionDestino: "ALMACENES", fechaInicio: input.fechaCierre, fechaDevolucionPrevista: null, motivo: "Recepción y custodia en Almacenes tras devolución.", referenciaActa: null }, ctx, tx);
+      asignacionAlmacenesId = recibida.id;
+    }
+    return { id: asignacion.id, activoId: asignacion.activoId, asignacionAlmacenesId };
   });
 }
