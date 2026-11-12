@@ -1,5 +1,6 @@
 /** Regression checks with an in-memory SQL double; never connects to a database. */
 import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { SourceTextModule, SyntheticModule } from 'node:vm';
 import ts from 'typescript';
@@ -22,6 +23,7 @@ const synthetic = exports => new SyntheticModule(Object.keys(exports), function 
   for (const [key, value] of Object.entries(exports)) this.setExport(key, value);
 });
 const modules = new Map([
+  ['node:crypto', synthetic({ randomBytes })],
   ['zod', synthetic(zod)],
   ['@/db', synthetic({ pool })],
   ['@paralleldrive/cuid2', synthetic({ createId: () => 'generated-id' })],
@@ -46,14 +48,22 @@ async function load(file) {
   await compiled.evaluate();
   return compiled;
 }
+const codes=await load('src/lib/material-code.ts');
+modules.set('@/lib/material-code',codes);
+modules.set('./material-code',codes);
 const errors = await load('src/lib/warehouse-errors.ts');
 modules.set('@/lib/warehouse-errors', errors);
 modules.set('./warehouse-errors', errors);
+modules.set('@/lib/warehouse-fifo',await load('src/lib/warehouse-fifo.ts'));
+modules.set('@/lib/purchase-attachments',await load('src/lib/purchase-attachments.ts'));
 modules.set('./warehouse-notifications', modules.get('@/lib/warehouse-notifications'));
+modules.set('./warehouse-reference',await load('src/lib/warehouse-reference.ts'));
+modules.set('@/lib/warehouse-reference',modules.get('./warehouse-reference'));
 const validation = await load('src/lib/warehouse-validation.ts');
 modules.set('./warehouse-validation', validation);
 modules.set('@/lib/warehouse-validation', validation);
-const { lookupMaterialRequests } = (await load('src/lib/request-status.ts')).namespace;
+modules.set('./request-reference', await load('src/lib/request-reference.ts'));
+const { lookupMaterialRequests, loadPublicRequestReceipt } = (await load('src/lib/request-status.ts')).namespace;
 const { warehouseAction, getDeliveryReceipt } = (await load('src/actions/almacenes/manage.ts')).namespace;
 const { checkWarehouseAccess } = (await load('src/actions/almacenes/access.ts')).namespace;
 const { receiveMaterialRequest } = (await load('src/lib/material-intake.ts')).namespace;
@@ -67,7 +77,7 @@ respond = () => { throw new Error(internalMessage); };
 assert.equal((await getDeliveryReceipt('receipt')).error, 'No se pudo emitir el acta.');
 connectionError = new Error(internalMessage);
 assert.equal((await warehouseAction({ type: 'archive', id: 'material' })).error, 'No se pudo guardar. Revisa los datos e intenta nuevamente.');
-const intake = { name: 'Employee', document: '1234567-LP', position: 'Officer', department: 'Office', phone: '', warehouseId: 'w1', materialId: 'material', quantity: 1, purpose: 'Request office supplies', priority: 'normal', neededOn: '2099-01-01', submissionKey: '12a87d29-f6b0-4ca4-a70b-24c30f665e61' };
+const intake = { regional:'La Paz', name: 'Employee', document: '1234567-LP', position: 'Officer', department: 'Office', phone: '', warehouseId: 'w1', materialId: 'material', quantity: 1, purpose: 'Request office supplies', priority: 'normal', neededOn: '2099-01-01', submissionKey: '12a87d29-f6b0-4ca4-a70b-24c30f665e61' };
 assert.equal((await receiveMaterialRequest(intake)).error, 'No se pudo registrar la solicitud. Intenta nuevamente.', 'Pool connection failures must return a safe result');
 connectionError = undefined;
 assert.equal((await receiveMaterialRequest(intake)).error, 'No se pudo registrar la solicitud. Intenta nuevamente.', 'Query and rollback failures must not expose internal errors');
@@ -81,7 +91,7 @@ for (const id of ['', 'x'.repeat(201)]) {
   assert.equal(calls.length, 0);
 }
 
-for (const input of ['1234567-LP', { document: '1234567-LP' }, { document: 'A A', reference: 'receipt' }]) {
+for (const input of ['1234567-LP', {}, { document: 'A A', reference: 'receipt' }, {document:'1234567-LP',reference:'x'.repeat(201)}]) {
   calls = [];
   assert.equal((await lookupMaterialRequests(input)).ok, false);
   assert.equal(calls.length, 0, 'Incomplete or malformed credentials must not query records');
@@ -90,11 +100,21 @@ calls = [];
 respond = () => ({ rows: [], rowCount: 0 });
 assert.equal((await lookupMaterialRequests({ document: ' 1234567 lp ', reference: ' receipt ' })).ok, true);
 assert.deepEqual(calls[0].values, ['1234567LP', 'receipt']);
-assert.match(calls[0].sql, /p\.document=\$1 and r\.id=\$2/);
-assert.match(calls[0].sql, /limit 1/);
+assert.match(calls[0].sql, /p\.document=\$1 and \(\$2::text is null or r\.id=\$2/);
+assert.match(calls[0].sql, /p\.warehouse_id=m\.warehouse_id/);
+assert.match(calls[0].sql, /order by r\.created_at desc,r\.id/);
+assert.doesNotMatch(calls[0].sql, /limit 20/);
+for(const reference of [undefined,'','   ']){
+  calls=[];
+  assert.equal((await lookupMaterialRequests({document:' 1234567 lp ',reference})).ok,true,'Consulta sin comprobante');
+  assert.deepEqual(calls[0].values,['1234567LP',null],'CI normalizado y sin filtro de comprobante');
+}
+calls=[];
+assert.equal((await loadPublicRequestReceipt({document:'1234567-LP'})).ok,false,'Descargar sigue exigiendo seleccionar un comprobante concreto');
+assert.equal(calls.length,0);
 
 const review = { type: 'review', id: 'request', status: 'delivered', response: '', identityConfirmed: 'on' };
-const request = { id: 'request', material_id: 'material', warehouse_id: 'w1', quantity: 2, status: 'approved', archived: false, recipient_document: '1234567-LP' };
+const request = { id: 'request', material_id: 'material', warehouse_id: 'w1', quantity: 2, status: 'approved', archived: false, recipient_active:true,recipient_document: '1234567-LP' };
 function fixture(overrides = {}, target = { warehouse_id: 'w1', document: '1234567-LP' }) {
   calls = [];
   respond = sql => {
@@ -132,4 +152,4 @@ viewer = { ...viewer, role: 'empleado_agbc' };
 assert.equal((await warehouseAction(review)).ok, false, 'Employee records do not grant administration permissions');
 assert.equal(calls.length, 0);
 
-console.log('OK: safe error responses, public lookup with CI + exact receipt, warehouse isolation, role checks, stock rollback, recipient identity, and approved delivery date; no database access.');
+console.log('OK: safe errors, public history by exact CI with optional receipt, warehouse isolation, role checks, stock rollback, recipient identity, and approved delivery date; no database access.');

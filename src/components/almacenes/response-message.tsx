@@ -3,9 +3,6 @@ import { useId, useRef, useState } from 'react';
 
 const suggestions: Record<string, {label:string;text:string}[]> = {
   stock_reason: [
-    {label:'Compra',text:'Ingreso por compra de materiales para abastecimiento del almacén.'},
-    {label:'Reposición',text:'Reposición de existencias del almacén.'},
-    {label:'Devolución',text:'Ingreso por devolución de material no utilizado.'},
     {label:'Conteo físico',text:'Ajuste de existencias según conteo físico del almacén.'},
     {label:'Registro inicial',text:'Registro inicial del material en el inventario.'},
     {label:'Corrección de registro',text:'Corrección de un registro de inventario.'},
@@ -43,7 +40,7 @@ export function ResponseMessage({decision,required}:{decision:string;required:bo
   const purpose=decision==='purpose';
   const stockReason=decision==='stock_reason';
   const name=stockReason?'reason':purpose?'purpose':'response';
-  const label=stockReason?'Motivo de entrada o ajuste':purpose?'Motivo de la solicitud':decision==='denied'?'Motivo del rechazo':decision==='waiting'?'Información sobre la falta de stock':'Mensaje para el empleado';
+  const label=stockReason?'Motivo del saldo inicial o ajuste':purpose?'Motivo de la solicitud':decision==='denied'?'Motivo del rechazo':decision==='waiting'?'Información sobre la falta de stock':'Mensaje para el empleado';
   return <div className="full-width response-editor" data-field={name}>
     <label className="response-editor-label" htmlFor={`${hint}-message`}>{label}</label>
     <div className="response-suggestions" role="group" aria-label={purpose||stockReason?'Motivos sugeridos':'Mensajes sugeridos'}>

@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { dateInputValue, displayDate } from '../src/lib/request-date';
+assert.equal(dateInputValue('04112026'),'2026-11-04');
+assert.equal(dateInputValue('0411202'),'');
+assert.equal(dateInputValue('31042026'),'');
+assert.equal(dateInputValue('17/10/2026'),'2026-10-17');
+assert.equal(dateInputValue('7/1/2027'),'2027-01-07');
+assert.equal(dateInputValue('2026-10-17'),'2026-10-17');
+assert.equal(dateInputValue('29/02/2028'),'2028-02-29');
+for(const value of ['29/02/2026','31/04/2026','32/10/2026','17/13/2026','17/10/26','', 'texto'])assert.equal(dateInputValue(value),'');
+assert.equal(displayDate('2026-10-17'),'17/10/2026');
+console.log('OK: fechas manuales, formato ISO, años bisiestos y rechazo de fechas inexistentes.');

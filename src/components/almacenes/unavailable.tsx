@@ -1,9 +1,10 @@
 "use client";
+import { PostalLoader } from './postal-loader';
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LoaderCircle, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 export default function DashboardUnavailable() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function DashboardUnavailable() {
     <p className="muted">Comprueba tu conexión y que tu cuenta tenga un rol de almacenes activo. Puedes intentar nuevamente.</p>
     <div className="error-actions">
       <button className="primary-button" disabled={pending} onClick={() => startTransition(() => router.refresh())}>
-        {pending ? <LoaderCircle size={16} className="motion-spin" /> : <RefreshCw size={16} />}
+        {pending ? <PostalLoader/> : <RefreshCw size={16} />}
         {pending ? "Reintentando…" : "Intentar nuevamente"}
       </button>
       <Link href="/almacenes" className="secondary-button">Volver al acceso</Link>

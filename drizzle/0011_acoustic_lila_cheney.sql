@@ -1,0 +1,1 @@
+ALTER TABLE "suppliers" ADD COLUMN "business_type" text DEFAULT '' NOT NULL;

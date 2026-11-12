@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { renderToStaticMarkup } from 'react-dom/server';
+import type { Table } from 'jspdf-autotable';
+import { StockDetailTable } from '../src/components/almacenes/stock-detail-table';
+import { createReportPdf } from '../src/lib/report-pdf';
+
+const row={id:'paper',code:'PAP-001',name:'Papel bond tamaño carta',description:'Presentación de 500 hojas',category:'PAR-015 · Papel de escritorio',unit:'resma',unitCost:180/13,opening:10,openingValue:100,incoming:7,incomingValue:120,outgoing:4,outgoingValue:40,closing:13,closingValue:180};
+const html=renderToStaticMarkup(<StockDetailTable rows={[row]}/>);
+assert(html.includes('rowSpan="2"')&&html.includes('colSpan="2"'),'Cabeceras agrupadas en dos niveles');
+assert(html.indexOf('Código')<html.indexOf('Artículo')&&html.indexOf('Artículo')<html.indexOf('Descripción'),'Código, artículo y detalle separados');
+assert(!html.includes('Costo unitario'));
+assert(html.includes(row.description));
+const withoutDescription=renderToStaticMarkup(<StockDetailTable rows={[{...row,description:''}]}/>);
+assert(!withoutDescription.includes('>Descripción<'),'Sin detalles escritos se oculta la columna Descripción');
+assert(!withoutDescription.includes('Costo unitario'));
+for(const label of ['Saldos iniciales','Ingresos','Egresos','Saldo final'])assert(html.includes(label));
+assert(!html.includes('Lote'));
+assert(html.includes('<td>10</td><td>100,00</td><td>7</td><td>120,00</td><td>4</td><td>40,00</td><td>13</td><td>180,00</td>'),'Mantiene cantidades y valores en su bloque');
+const logos={agency:new Uint8Array(readFileSync('public/brand/report-agency.png')),presidency:new Uint8Array(readFileSync('public/brand/report-presidency.png'))};
+const record={Código:row.code,Artículo:row.name,Descripción:row.description,Unidad:row.unit,'Cantidad inicial':10,'Valor inicial Bs':'100,00','Entradas cantidad':7,'Entradas Bs':'120,00','Salidas cantidad':4,'Salidas Bs':'40,00','Cantidad final':13,'Valor final Bs':'180,00'};
+const records=Array.from({length:12},(_,index)=>({...record,Código:`PAP-${String(index+1).padStart(3,'0')}`}));
+const pdf=createReportPdf('Detalle de Almacen',records,'Administrador · Almacén central · Del 2026-10-01 al 2026-10-31 · Expresado en bolivianos.',logos,undefined,{movementLayout:true});
+const table=(pdf as typeof pdf & {lastAutoTable:Table}).lastAutoTable;
+assert.equal(pdf.getNumberOfPages(),1,'Todos los bloques caben juntos en A4 horizontal');
+assert.equal(table.columns.length,12);
+assert.equal(table.head.length,2);
+assert.equal(table.head[0]!.cells[0]!.rowSpan,2);
+const noDetailRecords=records.map(({Descripción,...rest})=>{void Descripción;return rest;});
+const noDetailPdf=createReportPdf('Detalle de Almacen',noDetailRecords,'Sin detalles escritos',logos,undefined,{movementLayout:true});
+const noDetailTable=(noDetailPdf as typeof pdf & {lastAutoTable:Table}).lastAutoTable;
+assert.equal(noDetailTable.columns.length,11);
+assert(!noDetailPdf.output().includes('(Descripción)'));
+assert.equal(noDetailPdf.getNumberOfPages(),1);
+for(const index of [4,6,8,10])assert.equal(table.head[0]!.cells[index]!.colSpan,2);
+assert(Math.abs(table.columns.reduce((sum,column)=>sum+column.width,0)-(pdf.internal.pageSize.getWidth()-20))<0.01,'La tabla usa el ancho imprimible sin recortes');
+assert.deepEqual(Object.values(table.body[0]!.cells).map(cell=>cell.text.join(' ')),Object.values(record).map(String),'El cambio de diseño conserva todos los datos');
+if(process.env.MOVEMENT_LAYOUT_PREVIEW){
+  const prefix=process.env.MOVEMENT_LAYOUT_PREVIEW;
+  writeFileSync(`${prefix}.pdf`,Buffer.from(pdf.output('arraybuffer')));
+  writeFileSync(`${prefix}.html`,`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Detalle de Almacen</title><style>${readFileSync('src/styles/globals.css','utf8')}${readFileSync('src/styles/experience.css','utf8')}</style><body style="padding:24px"><section class="data-panel"><div class="panel-heading"><h2>Detalle de Almacen</h2></div><div class="table-scroll">${renderToStaticMarkup(<StockDetailTable rows={records.map((record,index)=>({...row,id:String(index),code:record.Código}))}/>)}</div></section></body></html>`);
+}
+console.log('OK: detalle en pantalla y PDF con cabeceras agrupadas, sin Lote, sin recortes y con datos intactos.');

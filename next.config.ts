@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  devIndicators: { position: "bottom-right" },
+  experimental: { serverActions: { bodySizeLimit: "12mb" } },
   serverExternalPackages: ["pg"],
   async headers() {
     return [{ source: "/:path*", headers: [

@@ -49,7 +49,7 @@ try {
   const warehouse=(await pool.query('select warehouse_id from staff_profiles where user_id=(select user_id from sessions where token=$1)',[sessions[1]])).rows[0].warehouse_id;
   await pool.query("insert into materials(id,warehouse_id,code,name,category,unit,stock,minimum,location) values($1,$2,$1,$1,'Prueba','Unidad',3,1,'Prueba temporal')",[materialId,warehouse]);
   const received=event(manager,'warehouse:changed');const started=Date.now();
-  const requested=await action('submitPublicRequest',[{name:'Persona de prueba en vivo',document:'LIVE'+randomUUID().replaceAll('-','').slice(0,16),position:'Prueba',department:'Prueba',phone:'',warehouseId:warehouse,materialId,quantity:3,purpose:`Solicitud temporal ${materialId}`,priority:'normal',neededOn:'2099-01-01',submissionKey:randomUUID()}]);
+  const requested=await action('submitPublicRequest',[{name:'Persona de prueba en vivo',document:'LIVE'+randomUUID().replaceAll('-','').slice(0,16),regional:'La Paz',position:'Prueba',department:'Prueba',phone:'',warehouseId:warehouse,materialId,quantity:3,purpose:`Solicitud temporal ${materialId}`,priority:'normal',neededOn:'2099-01-01',submissionKey:randomUUID()}]);
   assert.equal(requested.ok,true);await received;assert(Date.now()-started<5000,'Aviso inmediato, sin esperar al sondeo');
   const inserted=(await pool.query('select id,person_id from material_requests where material_id=$1',[materialId])).rows[0];requestId=inserted.id;personId=inserted.person_id;
   assert((await action('getWarehouseNotifications',[tabs[1]])).items.some(n=>n.entity_id===requestId&&n.kind==='request_new'),'El aviso nuevo está disponible para la campana');

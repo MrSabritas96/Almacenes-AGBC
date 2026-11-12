@@ -1,3 +1,4 @@
+import { withMinimumLoading } from '@/lib/loading-time';
 import { loadWarehouse, type Snapshot } from "@/lib/warehouse";
 import WarehouseDashboard from "@/components/almacenes/dashboard";
 import DashboardUnavailable from "@/components/almacenes/unavailable";
@@ -6,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function Dashboard({searchParams}:{searchParams:Promise<{tab?:string}>}) {
   const {tab} = await searchParams;
   let snapshot: Snapshot;
-  try { snapshot = await loadWarehouse(tab); }
+  try { snapshot = await withMinimumLoading(()=>loadWarehouse(tab)); }
   catch { return <DashboardUnavailable/>; }
   return <WarehouseTabSession tabId={tab}><WarehouseDashboard data={snapshot}/></WarehouseTabSession>;
 }

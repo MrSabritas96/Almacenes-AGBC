@@ -1,0 +1,3 @@
+ALTER TABLE "purchases" ALTER COLUMN "supplier_id" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "purchases" ADD COLUMN "supplier_details" jsonb DEFAULT '{}'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "purchases" ADD CONSTRAINT "purchase_supplier_identified" CHECK (jsonb_typeof("purchases"."supplier_details") = 'object' AND ("purchases"."supplier_id" IS NOT NULL OR coalesce(length(btrim("purchases"."supplier_details"->>'name')),0) > 0));
