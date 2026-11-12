@@ -13,3 +13,4 @@ export * from "./audit.schema";
 // export * from "./activos.schema";
 // export * from "./almacenes.schema";
 // export * from "./conciliaciones.schema";
+export * from "./almacenes.schema";

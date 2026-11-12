@@ -1,0 +1,1 @@
+ALTER TABLE "warehouses" ADD COLUMN "requests_enabled" boolean DEFAULT true NOT NULL;

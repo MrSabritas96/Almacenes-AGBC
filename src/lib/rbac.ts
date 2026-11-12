@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 export const SUPERADMIN_ROLE = "superadmin";
@@ -24,14 +24,4 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
 export async function hasPermission(userId: string, permission: string): Promise<boolean> {
   const perms = await getUserPermissions(userId);
   return perms.has("*") || perms.has(permission);
-}
-
-export async function hasRole(userId: string, roleName: string): Promise<boolean> {
-  const [row] = await db
-    .select({ id: schema.roles.id })
-    .from(schema.userRoles)
-    .innerJoin(schema.roles, eq(schema.roles.id, schema.userRoles.roleId))
-    .where(and(eq(schema.userRoles.userId, userId), eq(schema.roles.name, roleName)))
-    .limit(1);
-  return !!row;
 }

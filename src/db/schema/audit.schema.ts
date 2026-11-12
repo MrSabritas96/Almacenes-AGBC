@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { index, jsonb, pgEnum, pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { index, uniqueIndex, jsonb, pgEnum, pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { users } from "./auth.schema";
 
 export const auditResultEnum = pgEnum("audit_result", ["success", "failure", "denied"]);
@@ -37,8 +37,13 @@ export const notificaciones = pgTable(
     title: text("title").notNull(),
     message: text("message").notNull(),
     link: text("link"),
+    kind: text("kind").notNull().default("general"),
+    warehouseId: text("warehouse_id"),
+    entityId: text("entity_id"),
+    eventKey: text("event_key"),
+    resolved: boolean("resolved").notNull().default(false),
     isRead: boolean("is_read").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("notif_user_read_idx").on(t.userId, t.isRead)],
+  (t) => [index("notif_user_read_idx").on(t.userId, t.isRead), uniqueIndex("notif_user_event_idx").on(t.userId,t.eventKey)],
 );

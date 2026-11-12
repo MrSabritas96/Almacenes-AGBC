@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Boxes, Landmark, Scale, ArrowRight } from "lucide-react";
 
 const modules = [
-  { href: "/activos", name: "Activos", desc: "Inventario y ciclo de vida de bienes institucionales.", icon: Landmark },
+  { href: null, name: "Activos", desc: "Inventario y ciclo de vida de bienes institucionales.", icon: Landmark },
   { href: "/almacenes", name: "Almacenes", desc: "Existencias, entradas, salidas y movimientos.", icon: Boxes },
-  { href: "/conciliaciones", name: "Conciliaciones", desc: "Cruce y validación de información contable.", icon: Scale },
+  { href: null, name: "Conciliaciones", desc: "Cruce y validación de información contable.", icon: Scale },
 ];
 
 export default function Home() {
@@ -19,15 +19,17 @@ export default function Home() {
         </h1>
         <p className="animate-fade-up mt-4 max-w-xl text-slate-300">Portal unificado para la gestión institucional de activos, almacenes y conciliaciones.</p>
         <div className="mt-14 grid w-full gap-5 sm:grid-cols-3">
-          {modules.map(({ href, name, desc, icon: Icon }) => (
-            <Link key={href} href={href} id={`module-${name.toLowerCase()}`}
-              className="glass group rounded-card p-6 text-left hover:-translate-y-1 hover:shadow-glow">
+          {modules.map(({ href, name, desc, icon: Icon }) => {
+            const content = <>
               <Icon className="h-8 w-8 text-accent-400" />
               <h2 className="mt-4 text-xl font-semibold">{name}</h2>
               <p className="mt-2 text-sm text-slate-300">{desc}</p>
-              <ArrowRight className="mt-4 h-4 w-4 text-brand-400 group-hover:translate-x-1" />
-            </Link>
-          ))}
+              {href ? <ArrowRight className="mt-4 h-4 w-4 text-brand-400 group-hover:translate-x-1" /> : <span className="mt-4 inline-block text-xs text-slate-300">Próximamente</span>}
+            </>;
+            return href ? <Link key={name} href={href} id={`module-${name.toLowerCase()}`}
+              className="glass group rounded-card p-6 text-left hover:-translate-y-1 hover:shadow-glow">{content}</Link>
+              : <div key={name} id={`module-${name.toLowerCase()}`} className="glass rounded-card p-6 text-left">{content}</div>;
+          })}
         </div>
       </section>
     </main>
