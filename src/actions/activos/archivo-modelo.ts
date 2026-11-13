@@ -1,0 +1,2 @@
+export type BienArchivo={fila:number;numero:string;descripcion:string;codigos:string[];estado:string;observaciones:string;coincidencias:{id:string;codigo:string|null;descripcion:string}[];vinculo:"exacto"|"ambiguo"|"sin_coincidencia"};
+export type DocumentoArchivo={hoja:string;bloque:string;titulo:string;tipo:string;numero:string;responsable:string;cargo:string;fecha:string|null;ciudad:string;texto:string;bienes:BienArchivo[];celdas:Record<string,string>;incidencias:string[]};

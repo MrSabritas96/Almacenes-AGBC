@@ -10,7 +10,7 @@ export * from "./rbac.schema";
 export * from "./audit.schema";
 
 // ── Módulos (descomentar al crear cada archivo) ──
-// export * from "./activos.schema";
+export * from "./activos.schema";
 // export * from "./almacenes.schema";
 // export * from "./conciliaciones.schema";
 export * from "./almacenes.schema";

@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { auth } from "./index";
 import { db, schema } from "@/db";
 import { eq } from "drizzle-orm";
@@ -11,4 +12,11 @@ export async function getSession(token?: string) {
   if (!session) return null;
   const [user] = await db.select({ active: schema.users.isActive }).from(schema.users).where(eq(schema.users.id, session.user.id));
   return user?.active ? session : null;
+}
+
+/** Protege páginas del módulo Activos sin cambiar la autenticación compartida. */
+export async function requireSession() {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  return session;
 }

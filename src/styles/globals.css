@@ -3,14 +3,27 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-brand-50: hsl(238 100% 97%);
-  --color-brand-100: hsl(238 100% 93%);
-  --color-brand-400: hsl(238 85% 70%);
-  --color-brand-500: hsl(243 75% 60%);
-  --color-brand-600: hsl(245 65% 52%);
-  --color-brand-700: hsl(246 60% 44%);
-  --color-accent-400: hsl(187 85% 55%);
-  --color-accent-500: hsl(189 90% 43%);
+  --color-brand-50: #f1f5fb;
+  --color-brand-100: #e1eaf5;
+  --color-brand-200: #c4d5eb;
+  --color-brand-300: #9bb9dc;
+  --color-brand-400: #6e96c6;
+  --color-brand-500: #3f70ad;
+  --color-brand-600: #20539a;
+  --color-brand-700: #1b477f;
+  --color-brand-800: #173963;
+  --color-brand-900: #102542;
+  --color-brand-950: #091829;
+  --color-accent-50: #fff9e6;
+  --color-accent-100: #fff1c2;
+  --color-accent-200: #ffe68a;
+  --color-accent-300: #ffda58;
+  --color-accent-400: #fecc36;
+  --color-accent-500: #e9b81f;
+  --color-accent-600: #c99612;
+  --color-accent-700: #9f730c;
+  --color-accent-800: #76550a;
+  --color-accent-900: #523d09;
   --color-ink-900: hsl(224 40% 8%);
   --color-ink-800: hsl(224 35% 12%);
   --color-ink-700: hsl(224 30% 18%);
@@ -18,7 +31,7 @@
   --color-ink-200: hsl(220 20% 90%);
   --color-ink-100: hsl(220 25% 96%);
   --radius-card: 1rem;
-  --shadow-glow: 0 10px 40px -10px hsl(243 75% 60% / 0.45);
+  --shadow-glow: 0 10px 40px -10px rgb(32 83 154 / 0.35);
 }
 
 :root {

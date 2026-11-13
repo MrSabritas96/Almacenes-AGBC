@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Boxes, Landmark, Scale, ArrowRight } from "lucide-react";
 
 const modules = [
-  { href: null, name: "Activos", desc: "Inventario y ciclo de vida de bienes institucionales.", icon: Landmark },
+  { href: "/activos", name: "Activos", desc: "Inventario y ciclo de vida de bienes institucionales.", icon: Landmark },
   { href: "/almacenes", name: "Almacenes", desc: "Existencias, entradas, salidas y movimientos.", icon: Boxes },
   { href: null, name: "Conciliaciones", desc: "Cruce y validación de información contable.", icon: Scale },
 ];
