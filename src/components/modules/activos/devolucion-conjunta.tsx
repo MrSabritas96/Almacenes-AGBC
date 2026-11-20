@@ -104,7 +104,6 @@ export function DevolucionConjunta({ responsableInicial }: { responsableInicial:
   );
   // El acta y su correlativo pertenecen a una procedencia; al elegir "Todas"
   // se preparará un documento independiente por cada procedencia.
-  const procedenciasDelGrupo = new Set(candidatasGrupo.map((acta) => acta.procedencia));
   const grupo = candidatasGrupo;
   const visibles = actas.filter((acta) => {
     const coincideResponsable = !responsableFiltro || normal(acta.responsable) === responsableFiltro;

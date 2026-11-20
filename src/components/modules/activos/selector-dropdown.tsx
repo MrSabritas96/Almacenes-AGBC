@@ -77,9 +77,7 @@ export function SelectorDropdown({
     if (abierto) {
       document.addEventListener("mousedown", handleClickOutside);
       // Enfocar automáticamente el input de búsqueda al abrir
-      setTimeout(() => {
-        inputBusquedaRef.current?.focus();
-      }, 50);
+      inputBusquedaRef.current?.focus();
     }
 
     return () => {

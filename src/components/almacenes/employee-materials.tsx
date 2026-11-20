@@ -1,11 +1,9 @@
 "use client";
 import { DateField } from './request-date';
 import { employeeMaterialView } from '@/lib/employee-materials-view';
-import { withMinimumLoading } from '@/lib/loading-time';
 import { PostalLoader } from './postal-loader';
-import { useRef, useState, useTransition } from "react";
-import { useWarehouseTab } from "./tab-session";
-import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { useWarehouseTab, useWarehouseRefresh } from "./tab-session";
 import { Download, Pencil, Plus, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { warehouseAction, getDeliveryReceipt } from "@/actions/almacenes/manage";
@@ -30,7 +28,7 @@ function PreviousMaterialFields({item,prefix=''}:{item?:EmployeeMaterial;prefix?
 }
 
 export async function downloadDeliveryReceipt(request: Request, tabId?: string) {
-  return withMinimumLoading(async()=>{
+
   const result=await getDeliveryReceipt(request.id,tabId);
   if(!result.ok) throw new Error(result.error);
   const {createDeliveryReceipt,loadReportLogos}=await import('@/lib/report-pdf');
@@ -38,14 +36,14 @@ export async function downloadDeliveryReceipt(request: Request, tabId?: string) 
   const {request:current,recipient,warehouse,issuer}=result.data;
   const doc=createDeliveryReceipt(current,recipient,warehouse,issuer,logos);
   await doc.save(`acta-entrega-${request.id}.pdf`,{returnPromise:true});
-  });
+
 }
 
 export function EmployeeMaterials({data,query='',userId=''}:{data:Snapshot;query?:string;userId?:string}) {
   const tabId=useWarehouseTab();
   const employee=data.viewer.role==='empleado_agbc';
-  const router=useRouter();
-  const [refreshing,startRefresh]=useTransition();
+
+  const {refreshing,refresh}=useWarehouseRefresh();
   const dialog=useRef<HTMLDialogElement>(null);
   const [editing,setEditing]=useState<Editing|null>(null);
   const [busy,setBusy]=useState(false);
@@ -65,16 +63,16 @@ export function EmployeeMaterials({data,query='',userId=''}:{data:Snapshot;query
     if(editing?.kind==='delivery')command={type:'delivery_correct',id:editing.item.id,...values,quantity:Number(values.quantity)};
     if(editing?.kind==='remove')command={type:editing.source==='initial'?'employee_material_archive':'delivery_void',id:editing.id,...values};
     setBusy(true);setError('');
-    try{const result=await withMinimumLoading(()=>warehouseAction(command,tabId));if(!result.ok){setError(result.error??'No se pudo guardar.');return;}close();toast.success('Registro actualizado');window.dispatchEvent(new Event('warehouse:changed'));startRefresh(()=>router.refresh());}
+    try{const result=await warehouseAction(command,tabId);if(!result.ok){setError(result.error??'No se pudo guardar.');return;}close();toast.success('Registro actualizado');refresh();}
     catch{setError('No se pudo conectar. Intenta nuevamente.');}finally{setBusy(false);}
   }
   async function receipt(r:Request){setBusy(true);try{await downloadDeliveryReceipt(r,tabId);toast.success('Acta descargada. Ábrela para imprimir y firmar.');}catch(e){toast.error(e instanceof Error?e.message:'No se pudo generar el acta.');}finally{setBusy(false);}}
-  async function exportPdf(){setBusy(true);try{await withMinimumLoading(async()=>{
+  async function exportPdf(){setBusy(true);try{
     const rows=[...initial.map(h=>({Empleado:h.employee,Regional:data.staff.find(s=>s.id===h.user_id)?.regional??'Sin asignar',Material:h.name,Cantidad:h.quantity,Unidad:h.unit,Origen:'Registro inicial',Estado:h.condition,Serie:h.serial,Ubicación:h.location,Fecha:dateText(h.recorded_on),Observaciones:h.notes})),...deliveries.map(r=>({Empleado:r.employee,Regional:r.regional,Material:r.material,Cantidad:r.quantity,Unidad:r.unit,Origen:'Entrega de almacén',Estado:'Entregado',Serie:'',Ubicación:r.delivery_place??'',Fecha:dateText(r.delivered_at!),Observaciones:r.response})),...withoutMaterials.map(p=>({Empleado:p.name,Regional:p.regional,Material:'Sin materiales registrados',Cantidad:0,Unidad:'—',Origen:'—',Estado:p.is_active?'Activo':'Inactivo',Serie:'',Ubicación:'',Fecha:'',Observaciones:'No tiene materiales previos ni entregas confirmadas.'}))];
     if(!rows.length){toast.error('No hay materiales en esta vista.');return;}
     const {createReportPdf,loadReportLogos}=await import('@/lib/report-pdf');
     const logos=await loadReportLogos();await createReportPdf(employee?'Mis materiales':'Materiales por empleado',rows,`${data.viewer.name} · ${filter?data.staff.find(s=>s.id===filter)?.name:'Todos los empleados autorizados'}${query?` · Búsqueda: ${query}`:''}`,logos).save('materiales-por-empleado.pdf',{returnPromise:true});
-  });}catch{toast.error('No se pudo generar el informe.');}finally{setBusy(false);}}
+  }catch{toast.error('No se pudo generar el informe.');}finally{setBusy(false);}}
   return <>
     <div className="inline-status" role="status" aria-live="polite">{refreshing&&<><PostalLoader/>Actualizando ficha…</>}</div>
     {busy&&!editing&&<PostalLoader size="panel" label="Preparando documento…"/>}<div className="table-toolbar">{!employee&&<><label>Empleado<select aria-label="Filtrar empleado" value={filter} onChange={e=>setFilter(e.target.value)}><option value="">Todos los empleados</option>{data.staff.filter(s=>s.role==='empleado_agbc').map(s=><option key={s.id} value={s.id}>{s.name} · {s.regional}</option>)}</select></label><button className="primary-button" disabled={!staff.length||busy||refreshing} onClick={()=>open({kind:'initial'})}><Plus size={17}/>Registrar material previo</button></>}<button className="secondary-button" disabled={busy||refreshing} onClick={()=>void exportPdf()}><Download size={17}/>Descargar ficha PDF</button></div>

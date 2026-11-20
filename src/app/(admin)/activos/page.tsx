@@ -39,28 +39,24 @@ export default async function ActivosPage({
       value: data.resumen.total,
       icon: ClipboardList,
       color: "text-blue-700 bg-blue-50 border-blue-200",
-      dot: "bg-blue-500",
     },
     {
       label: "En buen estado",
       value: data.resumen.buenos,
       icon: CircleCheck,
       color: "text-emerald-700 bg-emerald-50 border-emerald-200",
-      dot: "bg-emerald-500",
     },
     {
       label: "Requieren revisión",
       value: data.resumen.revision,
       icon: TriangleAlert,
       color: "text-amber-700 bg-amber-50 border-amber-200",
-      dot: "bg-amber-400",
     },
     {
       label: "Sin código identificable",
       value: data.resumen.sinCodigo,
       icon: FileQuestion,
       color: "text-slate-600 bg-slate-50 border-slate-200",
-      dot: "bg-slate-400",
     },
   ];
 
@@ -101,7 +97,7 @@ export default async function ActivosPage({
 
       {/* ── Tarjetas de resumen ───────────────────────────────────────── */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(({ label, value, icon: Icon, color, dot }) => (
+        {cards.map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
             className={`flex items-center justify-between gap-3 rounded-2xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-md ${color.split(" ").slice(2).join(" ")}`}

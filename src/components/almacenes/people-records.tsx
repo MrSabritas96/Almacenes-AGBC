@@ -1,22 +1,20 @@
 "use client";
-import { withMinimumLoading } from '@/lib/loading-time';
 import { PostalLoader } from './postal-loader';
-import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Pencil, Plus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { warehouseAction } from "@/actions/almacenes/manage";
-import { useWarehouseTab } from "./tab-session";
+import { useWarehouseTab, useWarehouseRefresh } from "./tab-session";
 import { REGIONALS } from "@/lib/warehouse-reference";
 import { statuses, type Snapshot, type Staff } from "@/lib/warehouse-types";
 export function PeopleRecords({data,query,onMaterials}:{data:Snapshot;query:string;onMaterials:(id:string)=>void}) {
-  const router=useRouter(); const tabId=useWarehouseTab(); const dialog=useRef<HTMLDialogElement>(null);
+  const tabId=useWarehouseTab(); const dialog=useRef<HTMLDialogElement>(null);
   const [activeFilter,setActiveFilter]=useState("all");
   const [editing,setEditing]=useState<Staff|null>(null);const [historyId,setHistoryId]=useState("");
   const history=data.staff.find(person=>person.id===historyId)??null;
   const historyPanel=useRef<HTMLElement>(null);
   useEffect(()=>{if(historyId){historyPanel.current?.focus({preventScroll:true});historyPanel.current?.scrollIntoView({block:"start",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});}},[historyId]);
-  const [busy,setBusy]=useState(false);const [refreshing,startRefresh]=useTransition();const [error,setError]=useState("");
+  const [busy,setBusy]=useState(false);const {refreshing,refresh}=useWarehouseRefresh();const [error,setError]=useState("");
   const people=data.staff.filter(p=>p.role==='empleado_agbc'&&(activeFilter==='all'||p.is_active===(activeFilter==='active'))&&`${p.name} ${p.document} ${p.position} ${p.department} ${p.regional}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   const nameOf=(id:string)=>data.warehouses.find(w=>w.id===id)?.name??"";
   const date=(value:string)=>new Intl.DateTimeFormat('es-BO',{timeZone:'America/La_Paz',dateStyle:'short'}).format(new Date(value));
@@ -24,15 +22,15 @@ export function PeopleRecords({data,query,onMaterials}:{data:Snapshot;query:stri
   async function submit(event:React.FormEvent<HTMLFormElement>){
     event.preventDefault();if(busy||refreshing)return;
     const values=Object.fromEntries(new FormData(event.currentTarget));setBusy(true);setError("");
-    try{const result=await withMinimumLoading(()=>warehouseAction({type:'person',id:editing?.id,...values,warehouseId:editing?.warehouse_id||data.viewer.warehouse_id||data.warehouses[0]?.id},tabId));
+    try{const result=await warehouseAction({type:'person',id:editing?.id,...values,warehouseId:editing?.warehouse_id||data.viewer.warehouse_id||data.warehouses[0]?.id},tabId);
       if(!result.ok){setError(result.error??'No se pudo guardar.');return;}
-      dialog.current?.close();toast.success('Ficha guardada. No se creó una cuenta de acceso.');startRefresh(()=>router.refresh());
+      dialog.current?.close();toast.success('Ficha guardada. No se creó una cuenta de acceso.');refresh();
     }catch{setError('No se pudo conectar. Intenta nuevamente.');}finally{setBusy(false);}
   }
   async function toggleActive(p:Staff){
     const reason=window.prompt(p.is_active?'Motivo de baja (se conserva todo el historial):':'Motivo de rehabilitación:');
     if(!reason?.trim())return;setBusy(true);
-    try{const result=await withMinimumLoading(()=>warehouseAction({type:'person_active',id:p.id,active:!p.is_active,reason},tabId));if(!result.ok){toast.error(result.error??'No se pudo guardar');return;}toast.success('Estado del empleado actualizado');startRefresh(()=>router.refresh());}catch{toast.error('No se pudo conectar');}finally{setBusy(false);}
+    try{const result=await warehouseAction({type:'person_active',id:p.id,active:!p.is_active,reason},tabId);if(!result.ok){toast.error(result.error??'No se pudo guardar');return;}toast.success('Estado del empleado actualizado');refresh();}catch{toast.error('No se pudo conectar');}finally{setBusy(false);}
   }
   return <>
     {refreshing&&<PostalLoader size="panel" label="Actualizando fichas…"/>}

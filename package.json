@@ -10,10 +10,10 @@
   "scripts": {
     "dev": "node server.js",
     "build": "next build",
-    "start": "node server.js",
+    "start": "node server.js --production",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/server-start.mjs && node tests/auth-server-security.mjs && node tests/secure-action-backup.mjs && node --experimental-vm-modules tests/warehouse-security.mjs && tsx tests/csv-export.ts && tsx tests/report-pdf.ts && tsx tests/request-date.ts && tsx tests/loading-time.ts && tsx tests/stock-report.ts && tsx tests/stock-movement-layout.tsx && tsx tests/institutional-stock-report.ts && tsx tests/stock-report-xlsx.ts && tsx tests/material-code.ts && tsx tests/employee-materials-view.ts && tsx tests/report-filename.ts",
+    "test": "node tests/server-start.mjs && node tests/auth-server-security.mjs && node tests/secure-action-backup.mjs && node --experimental-vm-modules tests/warehouse-security.mjs && tsx tests/csv-export.ts && tsx tests/report-pdf.ts && tsx tests/request-date.ts && node tests/frontend-live-refresh.mjs && node tests/interaction-performance.mjs && node tests/warehouse-routing.mjs && node tests/backend-performance.mjs && node tests/warehouse-loading.mjs && tsx tests/stock-report.ts && tsx tests/stock-movement-layout.tsx && tsx tests/institutional-stock-report.ts && tsx tests/stock-report-xlsx.ts && tsx tests/material-code.ts && tsx tests/employee-materials-view.ts && tsx tests/report-filename.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

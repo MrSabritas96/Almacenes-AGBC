@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { importWarehouseWorkbook, listWarehouseClosings, loadWarehouseClosing } from '@/actions/almacenes/imports';
 import type { WarehouseClosing } from '@/lib/warehouse-closing';
 import type { ImportKind } from '@/lib/warehouse-import';
 import type { Snapshot } from '@/lib/warehouse-types';
-import { useWarehouseTab } from './tab-session';
+import { useWarehouseTab, useWarehouseRefresh } from './tab-session';
 import { WarehouseClosingStatement } from './warehouse-closing-statement';
 import type { ClosingStatement } from '@/lib/warehouse-closing-statement';
 
@@ -47,7 +46,7 @@ function ClosingTable({ closing, detail, query }: { closing: WarehouseClosing; d
 export function WarehouseImports({ warehouses, query, closingYear }: {
   warehouses: Snapshot['warehouses']; query: string; closingYear?: number;
 }) {
-  const router = useRouter();
+  const {refresh} = useWarehouseRefresh();
   const tabId = useWarehouseTab();
   const [kind, setKind] = useState<ImportKind>('Cierre');
   const [warehouse, setWarehouse] = useState(warehouses.length === 1 ? warehouses[0]!.id : '');
@@ -122,7 +121,7 @@ export function WarehouseImports({ warehouses, query, closingYear }: {
         setPreview(null);
         setNotice(result.alreadyImported ? 'Este cierre ya está registrado.' : `Importación completa · ${result.count} filas guardadas.`);
         if (kind === 'Cierre') await fetchArchive();
-        else router.refresh();
+        else refresh();
       } else {
         setPreview(result);
       }

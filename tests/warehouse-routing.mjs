@@ -46,7 +46,7 @@ const {default: page} = await load('src/app/almacenes/[section]/page.tsx', depen
 const input = section => ({params: Promise.resolve({section}), searchParams: Promise.resolve({focus: 'material-1'})});
 const rendered = await page(input('inventario'));
 assert.equal(rendered.props.initialView, 'inventory');
-assert.equal(rendered.props.initialFocus, 'material-1');
+assert(!('initialFocus' in rendered.props), 'El foco se lee de la URL actual para conservar Atrás y Adelante');
 assert.deepEqual(receivedArgs, [], 'Carga los datos con la sesión global');
 await assert.rejects(() => page(input('desconocido')), /notFound/);
 role = 'admin_almacenes';

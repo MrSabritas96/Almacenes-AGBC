@@ -16,7 +16,7 @@ class SocketServer {
   use(callback) { middleware = callback; }
   on(event, callback) { assert.equal(event, 'connection'); onConnection = callback; }
 }
-class Pool {
+class Pool extends EventEmitter {
   async query(sql, values) {
     queries.push({ sql, values });
     if (queryFailure) throw new Error('database unavailable');
@@ -33,7 +33,7 @@ const dependencies = {
 };
 vm.runInNewContext(source, {
   require: name => { assert(name in dependencies); return dependencies[name]; },
-  __dirname: '/test', process: { env: { NODE_ENV: 'production' }, exit: () => assert.fail('unexpected exit') },
+  __dirname: '/test', process: { argv: [], env: { NODE_ENV: 'production' }, exit: () => assert.fail('unexpected exit') },
   console: { log() {}, error: assert.fail }, URL, Date, AbortSignal,
   fetch: async (url, options) => {
     assert.equal(url, 'http://127.0.0.1:3000/api/auth/get-session');

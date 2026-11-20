@@ -1,5 +1,4 @@
 "use client";
-import { withMinimumLoading } from '@/lib/loading-time';
 import { PostalLoader } from "./postal-loader";
 import { useWarehouseTab } from './tab-session';
 import { useEffect, useState } from 'react';
@@ -46,34 +45,46 @@ export function WarehouseNotifications({onNavigate}:{onNavigate:(tab:'inventory'
   const [busy,setBusy]=useState(false);
   const [open,setOpen]=useState<WarehouseNotificationCategory | null>(null);
   useEffect(()=>{
-    let active=true;
-    const animationReady=withMinimumLoading(()=>undefined);
-    async function refresh(){try{const value=await getWarehouseNotificationGroups(tabId);if(active){setGroups(value);setUnavailable(false);}}catch{if(active)setUnavailable(true);}finally{await animationReady;if(active)setLoading(false);}}
+    let active=true,inFlight=false,queued=false;
+    let changeTimer: ReturnType<typeof setTimeout> | undefined;
+    async function refresh(){
+      if(!active)return;
+      if(inFlight){queued=true;return;}
+      inFlight=true;
+      try{const value=await getWarehouseNotificationGroups(tabId);if(active){setGroups(value);setUnavailable(false);}}
+      catch{if(active)setUnavailable(true);}
+      finally{
+        inFlight=false;
+        if(active)setLoading(false);
+        if(queued&&active){queued=false;void refresh();}
+      }
+    }
     void refresh();
     const timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh();},15000);
     const visible=()=>{if(document.visibilityState==='visible')void refresh();};
-    const changed=()=>{void refresh();};
+    const changed=()=>{clearTimeout(changeTimer);changeTimer=setTimeout(()=>void refresh(),100);};
     window.addEventListener('warehouse:changed',changed);
     document.addEventListener('visibilitychange',visible);
-    return()=>{active=false;window.removeEventListener('warehouse:changed',changed);clearInterval(timer);document.removeEventListener('visibilitychange',visible);};
+    return()=>{active=false;window.removeEventListener('warehouse:changed',changed);clearTimeout(changeTimer);clearInterval(timer);document.removeEventListener('visibilitychange',visible);};
   },[tabId]);
   async function read(category: WarehouseNotificationCategory, item?: WarehouseNotification) {
+    if(busy)return;
+    if (item?.entity_id) {
+      setOpen(null);
+      onNavigate(category, item.entity_id);
+    }
     if (!item?.is_read) {
       setBusy(true);
       try {
         const filter = filters[category];
         const status = filter === 'all' ? undefined : filter;
-        await withMinimumLoading(() => markWarehouseNotificationsRead(item?.id ?? null, tabId, category, status));
-        setGroups(await getWarehouseNotificationGroups(tabId));
+        await markWarehouseNotificationsRead(item?.id ?? null, tabId, category, status);
+        window.dispatchEvent(new Event('warehouse:changed'));
       } catch {
         toast.error('No se pudieron marcar los avisos como leídos.');
       } finally {
         setBusy(false);
       }
-    }
-    if (item?.entity_id) {
-      setOpen(current => current === category ? null : current);
-      onNavigate(category, item.entity_id);
     }
   }
   const byStatus = {...groups.inventory.byStatus, ...groups.requests.byStatus};

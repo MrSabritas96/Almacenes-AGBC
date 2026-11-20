@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { withMinimumLoading } from '@/lib/loading-time';
 import { PostalLoader } from './postal-loader';
 import { useRef, useState } from "react";
 import { CheckCircle2, Copy, Download, Send } from "lucide-react";
@@ -49,7 +48,7 @@ export default function PublicMaterialRequest({ catalog }: { catalog: Catalog;to
     submissionKey.current ||= crypto.randomUUID();
     setBusy(true);setError("");
     try {
-      const result=await withMinimumLoading(()=>submitPublicRequest({...values,warehouseId:warehouse,lines:lines.map(line=>({materialId:materials.find(m=>m.label===line.materialText)?.id??'',quantity:Number(line.quantity)})),priority:priorityText==='Urgente'?'urgent':'normal',submissionKey:submissionKey.current}));
+      const result=await submitPublicRequest({...values,warehouseId:warehouse,lines:lines.map(line=>({materialId:materials.find(m=>m.label===line.materialText)?.id??'',quantity:Number(line.quantity)})),priority:priorityText==='Urgente'?'urgent':'normal',submissionKey:submissionKey.current});
       if(!result.ok){setError(result.error);return;}
       setReceiptDocument(String(values.document??""));setReference(result.reference);
     } catch {setError("No se pudo enviar. Reintenta; el mismo envío no se registrará dos veces.");}

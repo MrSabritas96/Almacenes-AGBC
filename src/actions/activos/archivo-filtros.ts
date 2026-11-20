@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, ilike, inArray, isNull, isNotNull, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, isNotNull, or, sql, type SQL } from "drizzle-orm";
 import { actResponsables as responsables } from "@/db/schema/activos.schema";
 import { actListadoActas as actas, actListadoPdfs as originales } from "./archivo-listado";
 import { uuidArchivo } from "./archivo-consultas";

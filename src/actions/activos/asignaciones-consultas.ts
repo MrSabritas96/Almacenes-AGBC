@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, ilike, isNull, isNotNull, or, sql, type SQL } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { actActivos, actAsignaciones, actCustodiaActual, actDocumentosArchivo, actResponsables } from "@/db/schema/activos.schema";
+import { actActivos, actAsignaciones, actCustodiaActual, actResponsables } from "@/db/schema/activos.schema";
 import { actListadoActas } from "./archivo-listado";
 import { requireSession } from "@/lib/auth/activos-session";
 import { hasPermission } from "@/lib/rbac";

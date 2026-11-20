@@ -1,15 +1,13 @@
 "use client";
 import { DateField } from './request-date';
 import { dateInputValue } from '@/lib/request-date';
-import { useEffect, useId, useRef, useState, useTransition } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { FileImage, FileText, Plus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import type { Snapshot } from '@/lib/warehouse-types';
 import type { Supplier } from '@/lib/warehouse';
 import { saveSupplier, setSupplierActive, registerPurchase } from '@/actions/almacenes/purchases';
-import { useWarehouseTab } from './tab-session';
-import { withMinimumLoading } from '@/lib/loading-time';
+import { useWarehouseTab, useWarehouseRefresh } from './tab-session';
 import { PostalLoader } from './postal-loader';
 import { DocumentAttachments } from './document-attachments';
 import { SearchSelect } from './search-select';
@@ -21,16 +19,17 @@ export function PurchaseHistory({data,supplierId,materialId}:{data:Snapshot;supp
 }
 
 export function Suppliers({data,query}:{data:Snapshot;query:string}) {
-  const dialog=useRef<HTMLDialogElement>(null),router=useRouter(),tabId=useWarehouseTab();
+  const dialog=useRef<HTMLDialogElement>(null),tabId=useWarehouseTab();
   const [businessType,setBusinessType]=useState('');
   const typeOptions=Array.from(new Set(['Tienda','Almacén','Distribuidora','Fábrica','Empresa de servicios','Importadora','Mayorista',...data.suppliers.map(s=>s.business_type).filter(Boolean)])).sort((a,b)=>a.localeCompare(b,'es')).map(label=>({id:label,label}));
-  const [editing,setEditing]=useState<Supplier>(),[history,setHistory]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[refreshing,startRefresh]=useTransition();
+  const [editing,setEditing]=useState<Supplier>(),[history,setHistory]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+  const {refreshing,refresh}=useWarehouseRefresh();
   const rows=data.suppliers.filter(s=>`${s.name} ${s.business_type} ${s.nit} ${s.contact} ${s.phone}`.toLowerCase().includes(query.toLowerCase()));
-  async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();if(busy||refreshing)return;const values=Object.fromEntries(new FormData(event.currentTarget));setBusy(true);setError('');try{const result=await withMinimumLoading(()=>saveSupplier({...values,id:editing?.id},tabId));if(!result.ok){setError(result.error);return;}dialog.current?.close();toast.success('Proveedor guardado');startRefresh(()=>router.refresh());}catch{setError('No se pudo conectar.');}finally{setBusy(false);}}
+  async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();if(busy||refreshing)return;const values=Object.fromEntries(new FormData(event.currentTarget));setBusy(true);setError('');try{const result=await saveSupplier({...values,id:editing?.id},tabId);if(!result.ok){setError(result.error);return;}dialog.current?.close();toast.success('Proveedor guardado');refresh();}catch{setError('No se pudo conectar.');}finally{setBusy(false);}}
   async function toggleActive(supplier:Supplier){
     if(busy||refreshing)return;
     setBusy(true);
-    try{const result=await withMinimumLoading(()=>setSupplierActive({id:supplier.id,active:!supplier.is_active},tabId));if(!result.ok){toast.error(result.error);return;}toast.success(supplier.is_active?'Proveedor dado de baja':'Proveedor activado');startRefresh(()=>router.refresh());}catch{toast.error('No se pudo conectar. Intenta nuevamente.');}finally{setBusy(false);}
+    try{const result=await setSupplierActive({id:supplier.id,active:!supplier.is_active},tabId);if(!result.ok){toast.error(result.error);return;}toast.success(supplier.is_active?'Proveedor dado de baja':'Proveedor activado');refresh();}catch{toast.error('No se pudo conectar. Intenta nuevamente.');}finally{setBusy(false);}
   }
   return <><div className="table-toolbar"><button className="primary-button" disabled={busy||refreshing} onClick={()=>{setEditing(undefined);setBusinessType('');setError('');dialog.current?.showModal();}}>Registrar proveedor</button></div><section className="data-panel"><div className="table-scroll"><table><thead><tr><th>Razón social / NIT</th><th>Tipo de proveedor</th><th>Contacto</th><th>Dirección</th><th>Estado</th><th>Compras</th><th>Acciones</th></tr></thead><tbody>{rows.map(s=><tr key={s.id}><td><strong>{s.name}</strong><small>NIT: {s.nit}</small><small>{data.warehouses.find(w=>w.id===s.warehouse_id)?.name}</small></td><td>{s.business_type||'Sin especificar'}</td><td>{s.contact}<small>{s.phone}</small><small>{s.email}</small></td><td>{s.address}<small>{s.notes}</small></td><td>{s.is_active?'Activo':'Inactivo'}</td><td>{data.purchases.filter(p=>p.supplier_id===s.id).length}</td><td><div className="row-actions supplier-actions"><button className="small-button" disabled={busy||refreshing} aria-label={`${s.is_active?'Dar de baja':'Activar'} proveedor ${s.name}`} onClick={()=>void toggleActive(s)}>{s.is_active?'Dar de baja':'Activar'}</button><button className="small-button" onClick={()=>setHistory(s.id)}>Ver historial</button><button className="small-button" disabled={busy||refreshing} onClick={()=>{setEditing(s);setBusinessType(s.business_type??'');setError('');dialog.current?.showModal();}}>Editar</button></div></td></tr>)}</tbody></table>{!rows.length&&<p className="empty-state">No hay proveedores con estos filtros.</p>}</div></section>
     {history&&<section className="data-panel"><div className="panel-heading"><h2>Compras a {data.suppliers.find(s=>s.id===history)?.name}</h2><button className="small-button" onClick={()=>setHistory('')}>Cerrar historial</button></div><PurchaseHistory data={data} supplierId={history}/></section>}
@@ -115,9 +114,10 @@ function PurchaseAttachmentField({files, setFiles}: {files: File[]; setFiles: (f
 }
 
 export function PurchaseEntry({data}:{data:Snapshot}) {
-  const dialog=useRef<HTMLDialogElement>(null),router=useRouter(),tabId=useWarehouseTab();
+  const dialog=useRef<HTMLDialogElement>(null),tabId=useWarehouseTab();
   const [lines,setLines]=useState<PurchaseLine[]>([]),[warehouseId,setWarehouseId]=useState(data.viewer.warehouse_id||data.warehouses[0]?.id||'');
-  const [error,setError]=useState(''),[busy,setBusy]=useState(false),[refreshing,startRefresh]=useTransition();
+  const [error,setError]=useState(''),[busy,setBusy]=useState(false);
+  const {refreshing,refresh}=useWarehouseRefresh();
   const [entryKey,setEntryKey]=useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [supplierMode,setSupplierMode]=useState<'registered'|'occasional'>('registered'),[saveNewSupplier,setSaveNewSupplier]=useState(false),[supplierType,setSupplierType]=useState('');
@@ -133,7 +133,7 @@ export function PurchaseEntry({data}:{data:Snapshot}) {
     for (const file of attachments) form.append('attachments', file);
     form.set('lines',JSON.stringify(lines.map(({materialId,quantity,unitCost,invoiceDescription,lot,expiresOn})=>({materialId,quantity,unitCost,invoiceDescription,lot,expiresOn:dateInputValue(expiresOn)}))));
     setBusy(true);setError('');
-    try{const result=await withMinimumLoading(()=>registerPurchase(form,tabId));if(!result.ok){setError(result.error);return;}dialog.current?.close();toast.success('Compra y existencias registradas');startRefresh(()=>router.refresh());window.dispatchEvent(new Event('warehouse:changed'));}
+    try{const result=await registerPurchase(form,tabId);if(!result.ok){setError(result.error);return;}dialog.current?.close();toast.success('Compra y existencias registradas');refresh();}
     catch{setError('No se pudo conectar. Reintenta este mismo formulario.');}finally{setBusy(false);}
   }
   return <><button className="secondary-button" disabled={!data.materials.length} onClick={()=>{setEntryKey(crypto.randomUUID());setWarehouseId(data.viewer.warehouse_id||data.warehouses[0]?.id||'');setLines([newPurchaseLine()]);setSupplierMode(data.suppliers.some(s=>s.is_active&&s.warehouse_id===(data.viewer.warehouse_id||data.warehouses[0]?.id))?'registered':'occasional');setSaveNewSupplier(false);setSupplierType('');setError('');dialog.current?.showModal();}}>Registrar compra / reposición</button>

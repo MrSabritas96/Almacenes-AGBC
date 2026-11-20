@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 // Servidor híbrido: Next.js + Socket.IO en el mismo puerto.
 const { createServer } = require("node:http");
+// El comando start siempre sirve el build, aunque .env esté preparado para desarrollo.
+if (process.argv.includes("--production")) process.env.NODE_ENV = "production";
 const next = require("next");
 const { Server } = require("socket.io");
 const { Pool } = require("pg");
@@ -74,7 +76,8 @@ async function start() {
   // Accesible desde Server Actions: globalThis.__io?.to(`user:${id}`).emit(...)
   globalThis.__io = io;
 
-  const socketDb = new Pool({connectionString:process.env.DATABASE_URL,max:3});
+  const socketDb = new Pool({connectionString:process.env.DATABASE_URL,max:3,connectionTimeoutMillis:5000,idleTimeoutMillis:30000});
+  socketDb.on('error', error => console.error('Conexión PostgreSQL de avisos interrumpida:', error));
   const activeSocketSession = async (token) => {
     const { rows } = await socketDb.query(`select s.expires_at from sessions s join users u on u.id=s.user_id
       where s.token=$1 and s.expires_at>now() and u.is_active

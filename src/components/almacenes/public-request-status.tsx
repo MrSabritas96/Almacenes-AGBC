@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { withMinimumLoading } from '@/lib/loading-time';
 import { PostalLoader } from './postal-loader';
 import { useEffect, useState } from 'react';
 import { ClipboardList, Download, Search } from 'lucide-react';
@@ -20,10 +19,10 @@ export default function PublicRequestStatus() {
   const [pdfError,setPdfError]=useState('');
   useEffect(()=>{
     if(!lookup)return;
-    let active=true,inFlight=false,initial=true;
+    let active=true,inFlight=false;
     async function refresh(){
       if(inFlight)return;inFlight=true;
-      try {const first=initial;initial=false;const next=await (first?withMinimumLoading(()=>consultMaterialRequests(lookup!)):consultMaterialRequests(lookup!));if(active)setResult(next);}
+      try {const next=await consultMaterialRequests(lookup!);if(active)setResult(next);}
       catch {if(active)setResult({ok:false,error:'No se pudo conectar. Intenta nuevamente.'});}
       finally {inFlight=false;if(active)setBusy(false);}
     }

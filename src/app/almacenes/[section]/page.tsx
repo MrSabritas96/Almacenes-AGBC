@@ -8,7 +8,7 @@ import DashboardUnavailable from '@/components/almacenes/unavailable';
 
 export const dynamic = 'force-dynamic';
 
-export default async function WarehousePage({params, searchParams}: {
+export default async function WarehousePage({params}: {
   params: Promise<{section: string}>;
   searchParams: Promise<{focus?: string}>;
 }) {
@@ -17,14 +17,14 @@ export default async function WarehousePage({params, searchParams}: {
   if (!view) notFound();
   const session = await getSession();
   if (!session) redirect('/login');
-  const {focus} = await searchParams;
   let data;
   try {
     data = await loadWarehouse();
-  } catch {
+  } catch (error) {
+    console.error('No se pudo cargar almacenes:', error);
     return <DashboardUnavailable/>;
   }
   if (['staff', 'warehouses'].includes(view) && data.viewer.role !== 'superadmin') notFound();
   const canSwitch = await hasPermission(session.user.id, 'activos:read');
-  return <WarehouseDashboard data={data} canSwitch={canSwitch} initialView={view} initialFocus={focus}/>;
+  return <WarehouseDashboard data={data} canSwitch={canSwitch} initialView={view}/>;
 }

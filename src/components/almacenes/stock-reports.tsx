@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 import type { Snapshot } from '@/lib/warehouse-types';
 import { historyRange, movementDay, periodRange, stockReportData } from '@/lib/stock-report';
 import { institutionalStockReport, stockReportNote, stockReportTitles, type StockReportKind } from '@/lib/institutional-stock-report';
-import { withMinimumLoading } from '@/lib/loading-time';
 import { PostalLoader } from './postal-loader';
 import { reportFilename } from '@/lib/report-filename';
 import { StockDetailTable } from './stock-detail-table';
@@ -42,7 +41,7 @@ export function StockReports({data,search,query,onSearch}:{
   async function excel(scope:'selected'|'all'|'eeff'){
     if(!validRange){toast.error('Revisa el intervalo de fechas.');return;}
     setBusy(true);
-    try {await withMinimumLoading(async()=>{
+    try {
       const {stockWorkbookBytes}=await import('@/lib/stock-report-xlsx');
       const bytes=await stockWorkbookBytes({rows,purchases,from,to,categories:data.budgetItems,includeEmpty:category==='all'&&!query.trim(),selected:reportKind,scope,context:`${data.warehouses.map(w=>w.name).join(', ')} · Emitido por: ${data.viewer.name} · Partida: ${category} · Búsqueda: ${query||'Todas'}`});
       const url=URL.createObjectURL(new Blob([new Uint8Array(bytes)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
@@ -50,12 +49,12 @@ export function StockReports({data,search,query,onSearch}:{
       const link=document.createElement('a');link.href=url;link.download=reportFilename(title,'xlsx');document.body.append(link);link.click();link.remove();
       window.setTimeout(()=>URL.revokeObjectURL(url),60000);
       toast.success(scope==='eeff'?'Excel de EEFF generado.':scope==='all'?'Excel generado con los seis cuadros.':'Excel generado con el cuadro seleccionado.');
-    });}catch{toast.error('No se pudo generar el archivo Excel. Intenta nuevamente.');}finally{setBusy(false);}
+    }catch{toast.error('No se pudo generar el archivo Excel. Intenta nuevamente.');}finally{setBusy(false);}
   }
   async function pdf(print=false){
     if(!validRange){toast.error('Revisa el intervalo de fechas.');return;}
     const preview=print?window.open('','_blank'):null;
-    setBusy(true);try{await withMinimumLoading(async()=>{const {createReportPdf,loadReportLogos}=await import('@/lib/report-pdf');const logos=await loadReportLogos();const report:Record<string,unknown>[]=rows.map(r=>({Código:r.code,Ítem:r.name,...(hasDescription?{Descripción:r.description?.trim()||''}:{}),Unidad:r.unit,'Cantidad inicial':r.opening,'Valor inicial Bs':amount(r.openingValue),'Entradas cantidad':r.incoming,'Entradas Bs':amount(r.incomingValue),'Salidas cantidad':r.outgoing,'Salidas Bs':amount(r.outgoingValue),'Cantidad final':r.closing,'Valor final Bs':amount(r.closingValue)}));
+    setBusy(true);try{const {createReportPdf,loadReportLogos}=await import('@/lib/report-pdf');const logos=await loadReportLogos();const report:Record<string,unknown>[]=rows.map(r=>({Código:r.code,Ítem:r.name,...(hasDescription?{Descripción:r.description?.trim()||''}:{}),Unidad:r.unit,'Cantidad inicial':r.opening,'Valor inicial Bs':amount(r.openingValue),'Entradas cantidad':r.incoming,'Entradas Bs':amount(r.incomingValue),'Salidas cantidad':r.outgoing,'Salidas Bs':amount(r.outgoingValue),'Cantidad final':r.closing,'Valor final Bs':amount(r.closingValue)}));
       if(!report.length&&!selectedReport)throw new Error('Sin registros');
       report.push({Código:'TOTALES Bs',Ítem:'',...(hasDescription?{Descripción:''}:{}),Unidad:'','Cantidad inicial':'-','Valor inicial Bs':amount(totals.opening),'Entradas cantidad':'-','Entradas Bs':amount(totals.incoming),'Salidas cantidad':'-','Salidas Bs':amount(totals.outgoing),'Cantidad final':'-','Valor final Bs':amount(totals.closing)});
       const doc=createReportPdf(selectedReport?.title??'Detalle de Almacen',selectedReport?.records??report,`${data.viewer.name} · ${data.warehouses.map(w=>w.name).join(', ')} · ${rangeLabel} · Ítem/partida: ${category} · Búsqueda: ${query||'Todas'} · Expresado en bolivianos. ${stockReportNote}`,logos,undefined,{institutionalSignatures:reportKind==='institutional',movementLayout:reportKind==='detail'});
@@ -77,7 +76,7 @@ export function StockReports({data,search,query,onSearch}:{
           URL.revokeObjectURL(downloadUrl);
         },{once:true});
       }else await doc.save(filename,{returnPromise:true});
-    });}catch{preview?.close();toast.error('No se pudo generar el reporte.');}finally{setBusy(false);}
+    }catch{preview?.close();toast.error('No se pudo generar el reporte.');}finally{setBusy(false);}
   }
   const totals=rows.reduce((a,r)=>({opening:a.opening+r.openingValue,incoming:a.incoming+r.incomingValue,outgoing:a.outgoing+r.outgoingValue,closing:a.closing+r.closingValue}),{opening:0,incoming:0,outgoing:0,closing:0});
   const archive = view==='archive';

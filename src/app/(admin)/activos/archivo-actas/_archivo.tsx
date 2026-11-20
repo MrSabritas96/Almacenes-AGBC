@@ -160,22 +160,11 @@ export default async function ArchivoPage({
     ? responsablesCoincidentes[0]
     : "";
 
-  const [procedencias, totales, conteosRegionales, responsablesActa] = await Promise.all([
+  const [procedencias, conteosRegionales, responsablesActa] = await Promise.all([
     db
       .selectDistinct({ nombre: actas.procedencia })
       .from(actas)
       .orderBy(asc(actas.procedencia)),
-    db
-      .select({
-        todas: sql<number>`count(*)::int`,
-        central: sql<number>`count(*) filter(where ${originales.ambito}='oficina_central')::int`,
-        regionales: sql<number>`count(*) filter(where ${originales.ambito}='regional')::int`,
-        devoluciones: sql<number>`count(*) filter(where ${actas.tipo}='devolucion')::int`,
-        revision: sql<number>`count(*) filter(where jsonb_array_length(${originales.observaciones})>0)::int`,
-        pdfs: sql<number>`count(*) filter(where ${originales.pdfOriginal} is not null)::int`,
-      })
-      .from(actas)
-      .leftJoin(originales, eq(actas.id, originales.documentoId)).where(isNull(actas.eliminadoEn)),
     db
       .select({ regional: originales.regional, n: sql<number>`count(*)::int` })
       .from(actas)
@@ -242,14 +231,6 @@ export default async function ArchivoPage({
     { value: "plantilla", label: "Plantilla" },
     { value: "complementario", label: "Documento complementario" },
   ];
-  const resumen = totales[0] ?? {
-    todas: 0,
-    central: 0,
-    regionales: 0,
-    devoluciones: 0,
-    revision: 0,
-    pdfs: 0,
-  };
   const cantidades = new Map(
     conteosRegionales.map((r) => [r.regional ?? "Por clasificar", r.n])
   );

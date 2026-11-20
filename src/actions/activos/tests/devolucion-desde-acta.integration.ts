@@ -1,7 +1,7 @@
 import "dotenv/config";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { eq,isNull,sql } from "drizzle-orm";
+import { eq,sql } from "drizzle-orm";
 import { db,pool,schema } from "@/db";
 import { actActas,actDocumentosArchivo,actCustodiaActual,actAsignaciones } from "@/db/schema/activos.schema";
 import { prepararDevolucion,prepararDevolucionConjunta } from "../devolucion-desde-acta-servicio";

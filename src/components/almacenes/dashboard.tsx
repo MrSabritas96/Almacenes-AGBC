@@ -1,14 +1,12 @@
 "use client";
 import { DateField } from './request-date';
-import { withMinimumLoading } from '@/lib/loading-time';
 import { PostalLoader } from './postal-loader';
-import { useMinimumPending } from './use-minimum-pending';
-import { useCallback, useDeferredValue, useEffect, useRef, useState, useTransition } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Boxes, LayoutDashboard, ClipboardList, Users, History, Plus, Search, ArrowUpRight, PackageCheck, ChevronDown, AlertTriangle, Clock3, X, Download, Warehouse, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { warehouseAction } from "@/actions/almacenes/manage";
-import { useWarehouseTab } from "./tab-session";
+import { useWarehouseTab, useWarehouseRefresh } from "./tab-session";
 
 import { authClient } from "@/lib/auth/client";
 import { labels, statuses, type Snapshot, type Material, type Request } from "@/lib/warehouse-types";
@@ -45,20 +43,20 @@ function exportCsv(rows: Record<string, unknown>[], filename: string) {
   const url = URL.createObjectURL(new Blob(['\uFEFF'+content],{type:'text/csv;charset=utf-8;'}));
   const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
 }
-export default function WarehouseDashboard({ data, canSwitch, initialView, initialFocus }: {data:Snapshot; canSwitch:boolean; initialView?:string; initialFocus?:string}) {
+export default function WarehouseDashboard({ data, canSwitch, initialView }: {data:Snapshot; canSwitch:boolean; initialView?:string}) {
   const tabId = useWarehouseTab();
   const router=useRouter(); const dialog=useRef<HTMLDialogElement>(null);
   const main=useRef<HTMLElement>(null);
   const pathname = usePathname();
-  const [refreshing,startRefresh]=useTransition();
+  const searchParams = useSearchParams();
+  const {refreshing,refresh}=useWarehouseRefresh();
   const [leaving,setLeaving]=useState(false);
-  const refresh=()=>startRefresh(()=>router.refresh());
   const [query,setQuery]=useState(""); const [status,setStatus]=useState("all");
   const [regional,setRegional]=useState("all");
   const regionalData={...data,staff:data.staff.filter(s=>regional==="all"||s.regional===regional),requests:data.requests.filter(r=>regional==="all"||r.regional===regional),employeeMaterials:data.employeeMaterials.filter(h=>regional==="all"||data.staff.find(s=>s.id===h.user_id)?.regional===regional)};
   const [pdfBusy,setPdfBusy]=useState(false);
   const deferredQuery=useDeferredValue(query);
-  const filtering=useMinimumPending(query!==deferredQuery);
+  const filtering=(query!==deferredQuery);
   const [lowStockOnly,setLowStockOnly]=useState(false);
   const [inventoryCategory,setInventoryCategory]=useState('all');
   const [inventorySections,setInventorySections]=useState({categories:true,fifo:false,purchases:false});
@@ -70,7 +68,7 @@ export default function WarehouseDashboard({ data, canSwitch, initialView, initi
   const currentTab = tabs.find(({id}) => id === requestedView);
   const tab = currentTab?.id ?? 'overview';
   const tabName = currentTab?.label ?? 'Mi dashboard';
-  const focus = initialFocus;
+  const focus = searchParams.get('focus') ?? undefined;
   const noticeTarget = !employee && (tab === 'inventory' || tab === 'requests') ? focus : null;
   const holdingUser = tab === 'holdings' ? focus ?? '' : '';
   const requestsEnabled=data.warehouses.find(w=>w.id===data.viewer.warehouse_id)?.requests_enabled ?? false;
@@ -97,7 +95,7 @@ export default function WarehouseDashboard({ data, canSwitch, initialView, initi
     const preview=print?window.open('','_blank'):null;
     if(print&&!preview){toast.error('Permite abrir la ventana de impresión en tu navegador.');return;}
     setPdfBusy(true);
-    try {await withMinimumLoading(async()=>{
+    try {
       const {createReportPdf,loadReportLogos}=await import('@/lib/report-pdf');
       const filters=[deferredQuery&&`Búsqueda: ${deferredQuery}`,status!=='all'&&`Estado: ${status==='attention'?'Pendientes y en espera':statuses[status]??status}`,tab==='inventory'&&`Partida: ${inventoryCategory==='all'?'Todas':inventoryCategory}`,tab==='inventory'&&lowStockOnly&&'Solo stock bajo'].filter(Boolean).join(' · ');
       const context=`${data.viewer.name} · ${labels[data.viewer.role]} · ${superadmin?'Todos los almacenes':nameOf(data.viewer.warehouse_id)}${filters?` · ${filters}`:''} · Regional: ${regional}`;
@@ -114,7 +112,7 @@ export default function WarehouseDashboard({ data, canSwitch, initialView, initi
         preview.addEventListener('pagehide',()=>URL.revokeObjectURL(url),{once:true});
       }else await doc.save(`${tab}-agbc-${today()}.pdf`,{returnPromise:true});
       toast.success(print?'Reporte filtrado listo para imprimir':'PDF generado y descargado');
-    });} catch {preview?.close();toast.error('No se pudo generar el PDF. Intenta nuevamente.');}
+    } catch {preview?.close();toast.error('No se pudo generar el PDF. Intenta nuevamente.');}
     finally {setPdfBusy(false);}
   }
   function setModal(next:Modal|null){setError('');setModalState(next);}
@@ -125,8 +123,9 @@ export default function WarehouseDashboard({ data, canSwitch, initialView, initi
   }, []);
   function setViewUrl(next: Tab, entityId?: string, replace = false) {
     const href = warehouseHref(next, entityId);
-    if (replace) router.replace(href, {scroll: false});
-    else router.push(href);
+    // Todas las secciones comparten este snapshot; cambiar de vista no requiere otra carga.
+    if (replace) window.history.replaceState(null, '', href);
+    else window.history.pushState(null, '', href);
   }
   function navigate(next: Tab, entityId?: string) {
     if (!confirmLeave()) return false;
@@ -137,12 +136,12 @@ export default function WarehouseDashboard({ data, canSwitch, initialView, initi
   }
   async function logout(){
     if(leaving)return;setLeaving(true);
-    try{const result=await withMinimumLoading(async()=>await authClient.signOut());if("error" in result && result.error)throw new Error('No se pudo cerrar la sesión.');router.push('/login');router.refresh();}
+    try{const result=await authClient.signOut();if("error" in result && result.error)throw new Error('No se pudo cerrar la sesión.');router.push('/login');router.refresh();}
     catch{toast.error('No se pudo cerrar la sesión. Intenta nuevamente.');setLeaving(false);}
   }
   async function run(command:unknown,documents?:FormData) {
     if(busy||refreshing)return;setBusy(true);setError('');
-    try { const result=await withMinimumLoading(()=>warehouseAction(command,tabId,documents));if(!result.ok){setError(result.error??'No se pudo guardar.');toast.error(result.error??'No se pudo guardar.');return;}setModal(null);toast.success('Cambios guardados');window.dispatchEvent(new Event('warehouse:changed'));refresh(); }
+    try { const result=await warehouseAction(command,tabId,documents);if(!result.ok){setError(result.error??'No se pudo guardar.');toast.error(result.error??'No se pudo guardar.');return;}setModal(null);toast.success('Cambios guardados');refresh(); }
     catch { setError('No se pudo conectar. Intenta nuevamente.');toast.error('No se pudo conectar. Intenta nuevamente.'); }
     finally {setBusy(false);}
   }
