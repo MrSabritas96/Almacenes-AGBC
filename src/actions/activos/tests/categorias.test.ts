@@ -1,0 +1,21 @@
+import "dotenv/config";
+import assert from "node:assert/strict";
+import { db,pool } from "@/db";
+import { actInventarioVigente } from "@/db/schema/activos.schema";
+import { CATEGORIAS_ACTIVOS,clasificarActivo } from "../categorias-modelo";
+async function main(){
+ assert.deepEqual(clasificarActivo("MUEBLES Y ENSERES DE OFICINA","Computadora"),{categoria:"muebles",criterio:"excel"});
+ assert.equal(clasificarActivo(null,"Silla con ruedas para escritorio").categoria,"muebles");
+ assert.equal(clasificarActivo(null,"Mesa para computadora").categoria,"muebles");
+ assert.equal(clasificarActivo(null,"Camioneta Toyota").categoria,"vehiculos");
+ assert.equal(clasificarActivo(null,"CPU marca DELL").categoria,"computacion");
+ assert.equal(clasificarActivo(null,"Radio portátil").categoria,"comunicacion");
+ assert.equal(clasificarActivo(null,"Documento sin descripción identificable").criterio,"pendiente");
+ assert.equal(clasificarActivo("GRUPO DESCONOCIDO","Silla").criterio,"pendiente");
+ const rows=await db.select({id:actInventarioVigente.id,grupo:actInventarioVigente.grupoContable,descripcion:actInventarioVigente.descripcion}).from(actInventarioVigente);
+ assert.equal(new Set(rows.map(r=>r.id)).size,rows.length);
+ const clasificados=rows.map(r=>clasificarActivo(r.grupo,r.descripcion));
+ const counts=CATEGORIAS_ACTIVOS.map(c=>({categoria:c.nombre,total:clasificados.filter(r=>r.categoria===c.id).length}));
+ assert.equal(counts.reduce((n,c)=>n+c.total,0),rows.length);
+ console.log(JSON.stringify({total:rows.length,categorias:counts,delExcel:clasificados.filter(r=>r.criterio==="excel").length,sugeridas:clasificados.filter(r=>r.criterio==="sugerida").length,datosSinModificar:true}));
+}main().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>pool.end());

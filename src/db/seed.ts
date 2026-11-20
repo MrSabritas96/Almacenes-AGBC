@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { db, pool, schema } from "./index";
 
-const MODULES = ["activos", "almacenes", "conciliaciones"] as const;
+const MODULES = ["activos", "almacenes"] as const;
 const ACTIONS = ["read", "create", "update", "delete"] as const;
 async function main() {
   await db.insert(schema.permissions).values([
@@ -13,18 +13,15 @@ async function main() {
   ]).onConflictDoNothing();
   await db.insert(schema.roles).values([
     {name:"superadmin",description:"Acceso total",isSystem:true},
-    ...MODULES.map(m=>({name:`admin_${m}`,description:`Administra ${m}`,isSystem:true})),
+    {name:"admin_activos",description:"Administra activos",isSystem:true},
   ]).onConflictDoNothing();
   const allRoles=await db.select().from(schema.roles);
   const allPerms=await db.select().from(schema.permissions);
-  for (const m of MODULES) {
-    const role=allRoles.find(r=>r.name===`admin_${m}`)!;
-    await db.insert(schema.rolePermissions).values(allPerms.filter(p=>p.module===m&&p.key!=="almacenes:request").map(p=>({roleId:role.id,permissionId:p.id}))).onConflictDoNothing();
-  }
+  const activosRole=allRoles.find(r=>r.name==="admin_activos")!;
+  await db.insert(schema.rolePermissions).values(allPerms.filter(p=>p.module==="activos").map(p=>({roleId:activosRole.id,permissionId:p.id}))).onConflictDoNothing();
   await db.insert(schema.warehouses).values({id:'agbc-central',name:'Almacén central',location:'La Paz'}).onConflictDoNothing();
   const accounts=[
     {username:process.env.SEED_ADMIN_USERNAME??"admin",email:process.env.SEED_ADMIN_EMAIL,password:process.env.SEED_ADMIN_PASSWORD,name:process.env.SEED_ADMIN_NAME??'SuperAdmin AGBC',role:'superadmin',position:'Superadministrador'},
-    {username:process.env.SEED_WAREHOUSE_USERNAME??"almacen",email:process.env.SEED_WAREHOUSE_EMAIL??'almacen@agbc.local',password:process.env.SEED_WAREHOUSE_PASSWORD,name:'Administrador de almacén',role:'admin_almacenes',position:'Responsable de almacén'},
   ];
   for (const a of accounts) {
     if(!a.email) throw new Error('Configura SEED_ADMIN_EMAIL.');
@@ -46,6 +43,6 @@ async function main() {
     await db.insert(schema.userRoles).values({userId:user.id,roleId:role.id}).onConflictDoNothing();
     await db.insert(schema.staffProfiles).values({userId:user.id,warehouseId:'agbc-central',position:a.position,department:'AGBC'}).onConflictDoNothing();
   }
-  console.log('Seed completado: roles, almacén central y cuentas administrativas. Los empleados se registran como fichas sin acceso.');
+  console.log('Seed completado: roles, almacén central y cuenta administrativa. Los empleados se registran como fichas sin acceso.');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>pool.end());

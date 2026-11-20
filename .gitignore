@@ -7,6 +7,7 @@ dist
 .env.*
 !.env.example
 backups/
+output/
 *.log
 .DS_Store
 Thumbs.db

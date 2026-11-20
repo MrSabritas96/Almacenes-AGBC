@@ -1,13 +1,10 @@
-import { withMinimumLoading } from '@/lib/loading-time';
-import { loadWarehouse, type Snapshot } from "@/lib/warehouse";
-import WarehouseDashboard from "@/components/almacenes/dashboard";
-import DashboardUnavailable from "@/components/almacenes/unavailable";
-import { WarehouseTabSession } from "@/components/almacenes/tab-session";
-export const dynamic = "force-dynamic";
-export default async function Dashboard({searchParams}:{searchParams:Promise<{tab?:string}>}) {
-  const {tab} = await searchParams;
-  let snapshot: Snapshot;
-  try { snapshot = await withMinimumLoading(()=>loadWarehouse(tab)); }
-  catch { return <DashboardUnavailable/>; }
-  return <WarehouseTabSession tabId={tab}><WarehouseDashboard data={snapshot}/></WarehouseTabSession>;
+import { redirect } from 'next/navigation';
+import { warehouseHref, warehouseRoutes, type WarehouseView } from '@/lib/warehouse-routes';
+
+export default async function LegacyDashboard({searchParams}: {
+  searchParams: Promise<{view?: string; focus?: string}>;
+}) {
+  const {view, focus} = await searchParams;
+  const section = view && Object.hasOwn(warehouseRoutes, view) ? view as WarehouseView : 'overview';
+  redirect(warehouseHref(section, focus));
 }

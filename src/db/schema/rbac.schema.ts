@@ -17,15 +17,14 @@ export const roles = pgTable("roles", {
 });
 
 /**
- * Permisos con convención `modulo:accion`, ej: "activos:create", "almacenes:read",
- * "conciliaciones:approve", "sistema:backup".
+ * Permisos con convención `modulo:accion`, ej: "activos:create", "almacenes:read", "sistema:backup".
  */
 export const permissions = pgTable(
   "permissions",
   {
     id: text("id").primaryKey().$defaultFn(() => createId()),
     key: text("key").notNull().unique(),
-    module: text("module").notNull(), // activos | almacenes | conciliaciones | sistema
+    module: text("module").notNull(), // activos | almacenes | sistema
     description: text("description"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -120,6 +120,34 @@
       "when": 1793804208002,
       "tag": "0016_eminent_iron_fist",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794576028153,
+      "tag": "0017_activos_fijos",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794581588746,
+      "tag": "0018_retirar_modulo_conciliaciones",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794584137660,
+      "tag": "0019_thin_james_howlett",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794596254482,
+      "tag": "0020_retirar_admin_almacen",
+      "breakpoints": true
     }
   ]
 }

@@ -9,7 +9,7 @@ const root = realpathSync(fileURLToPath(new URL('..', import.meta.url)));
 const project = createHash('sha256').update(root).digest('hex');
 
 // El puerto real de cada servidor de prueba lo asigna el SO; no se toca el sistema activo.
-async function check(identity, expectedCode, expectedMessage) {
+async function check(identity, expectedCode, expectedMessage, hostname = '127.0.0.1') {
   let requests = 0;
   const fixture = createServer((req, res) => {
     requests++;
@@ -20,7 +20,7 @@ async function check(identity, expectedCode, expectedMessage) {
   await new Promise(resolve => fixture.listen(0, '127.0.0.1', resolve));
   const child = spawn(process.execPath, ['server.js'], {
     cwd: root,
-    env: { ...process.env, NODE_ENV: 'development', HOSTNAME: '127.0.0.1', PORT: String(fixture.address().port) },
+    env: { ...process.env, NODE_ENV: 'development', HOSTNAME: hostname, PORT: String(fixture.address().port) },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let output = '';
@@ -41,5 +41,6 @@ async function check(identity, expectedCode, expectedMessage) {
 }
 
 await check(project, 0, /El sistema ya está iniciado o iniciando/);
+await check(project, 0, /El sistema ya está iniciado o iniciando/, '0.0.0.0');
 await check('otro-proyecto', 1, /ocupado por otro servicio/);
 console.log('OK: iniciar dos veces no falla; un servicio ajeno se conserva y se informa el conflicto.');

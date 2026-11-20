@@ -1,4 +1,4 @@
-import { categoryInfo, ITEM_CATEGORIES } from './warehouse-reference';
+import { categoryInfo, compareBudgetItems, ITEM_CATEGORIES, type BudgetItem } from './warehouse-reference';
 import type { Purchase } from './warehouse';
 import type { stockSummary } from './stock-report';
 
@@ -11,15 +11,15 @@ export const stockReportTitles = {
 };
 export type StockReportKind = keyof typeof stockReportTitles;
 type StockRow = ReturnType<typeof stockSummary>[number];
-export const stockReportNote = 'Clasificación por partidas internas del almacén PAR. Base: stock disponible. Las reservas se descuentan al aprobar; la entrega no genera un segundo descuento. Las salidas incluyen reservas y ajustes negativos. Otros ingresos incluyen devoluciones, ajustes y aperturas del periodo. PEPS desde su activación; los movimientos anteriores conservan su valoración histórica. Cantidades agregadas de distintas unidades: referencia de conteo, no magnitud física homogénea.';
+export const stockReportNote = 'Partidas del Clasificador por Objeto del Gasto 2019. Base: stock disponible. Las reservas se descuentan al aprobar; la entrega no genera un segundo descuento. Las salidas incluyen reservas y ajustes negativos. Otros ingresos incluyen devoluciones, ajustes y aperturas del periodo. PEPS desde su activación; los movimientos anteriores conservan su valoración histórica. Cantidades agregadas de distintas unidades: referencia de conteo, no magnitud física homogénea.';
 export const stockMoney = (value: number) => value.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// La misma proyección alimenta pantalla y PDF; se usa el código interno de partida en todas las salidas.
-export function institutionalStockReport(kind: StockReportKind, rows: StockRow[], purchases: Purchase[], from: string, to: string, includeEmpty = true, money: (value: number) => string | number = stockMoney) {
+// La misma proyección alimenta pantalla y PDF; se usa el código presupuestario en todas las salidas.
+export function institutionalStockReport(kind: StockReportKind, rows: StockRow[], purchases: Purchase[], from: string, to: string, includeEmpty = true, money: (value: number) => string | number = stockMoney, categories: readonly BudgetItem[] = ITEM_CATEGORIES) {
   const totals = rows.reduce((a, r) => ({ opening: a.opening + r.openingValue, incoming: a.incoming + r.incomingValue, outgoing: a.outgoing + r.outgoingValue, closing: a.closing + r.closingValue }), { opening: 0, incoming: 0, outgoing: 0, closing: 0 });
   const purchased = purchases.reduce((sum, p) => sum + p.quantity * Number(p.unit_cost), 0);
   const groups = new Map<string, { code: string; name: string; opening: number; openingValue: number; outgoingValue: number; closing: number; closingValue: number }>();
-  if (includeEmpty) for (const c of ITEM_CATEGORIES) groups.set(c.code, { code: c.code, name: c.name, opening: 0, openingValue: 0, outgoingValue: 0, closing: 0, closingValue: 0 });
+  if (includeEmpty) for (const c of categories) groups.set(c.code, { code: c.code, name: c.name, opening: 0, openingValue: 0, outgoingValue: 0, closing: 0, closingValue: 0 });
   for (const row of rows) {
     const category = categoryInfo(row.category);
     const code = category?.code ?? row.category;
@@ -27,7 +27,7 @@ export function institutionalStockReport(kind: StockReportKind, rows: StockRow[]
     group.opening += row.opening; group.openingValue += row.openingValue; group.outgoingValue += row.outgoingValue; group.closing += row.closing; group.closingValue += row.closingValue;
     groups.set(code, group);
   }
-  const ordered = [...groups.values()].sort((a, b) => a.code.localeCompare(b.code));
+  const ordered = [...groups.values()].sort(compareBudgetItems);
   let records: Record<string, string | number>[];
   if (kind === 'reconciliation') records = [
     { Concepto: 'Inventario inicial', 'Monto Bs': money(totals.opening) },

@@ -1,4 +1,5 @@
 "use client";
+import { categoryLabel, compareCategoryLabels } from '@/lib/warehouse-reference';
 import { DateField } from './request-date';
 import { dateInputValue, displayDate } from '@/lib/request-date';
 import { Archive, ClipboardList, FileSpreadsheet, Search } from 'lucide-react';
@@ -34,7 +35,7 @@ export function StockReports({data,search,query,onSearch}:{
   const closingYear=from===`${year}-01-01`&&to===`${year}-12-31`?Number(year):undefined;
   const rangeLabel=`${period==='all'?'Todo el historial · ':''}Del ${displayDate(from)} al ${displayDate(to)}`;
   const {rows,purchases,movements}=stockReportData(data,from,to,query,category);
-  const selectedReport=view!=='reports'||!validRange||reportKind==='detail'?null:institutionalStockReport(reportKind,rows,purchases,from,to,category==='all'&&!query.trim());
+  const selectedReport=view!=='reports'||!validRange||reportKind==='detail'?null:institutionalStockReport(reportKind,rows,purchases,from,to,category==='all'&&!query.trim(),undefined,data.budgetItems);
   const hasDescription=rows.some(row=>row.description?.trim());
   const reportTitle=selectedReport?.title??'Detalle de Almacen';
   const exportDisabled=busy||!validRange||search!==query;
@@ -43,7 +44,7 @@ export function StockReports({data,search,query,onSearch}:{
     setBusy(true);
     try {await withMinimumLoading(async()=>{
       const {stockWorkbookBytes}=await import('@/lib/stock-report-xlsx');
-      const bytes=await stockWorkbookBytes({rows,purchases,from,to,includeEmpty:category==='all'&&!query.trim(),selected:reportKind,scope,context:`${data.warehouses.map(w=>w.name).join(', ')} · Emitido por: ${data.viewer.name} · Partida: ${category} · Búsqueda: ${query||'Todas'}`});
+      const bytes=await stockWorkbookBytes({rows,purchases,from,to,categories:data.budgetItems,includeEmpty:category==='all'&&!query.trim(),selected:reportKind,scope,context:`${data.warehouses.map(w=>w.name).join(', ')} · Emitido por: ${data.viewer.name} · Partida: ${category} · Búsqueda: ${query||'Todas'}`});
       const url=URL.createObjectURL(new Blob([new Uint8Array(bytes)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
       const title=scope==='eeff'?'EEFF de almacenes':scope==='all'?'Todos los cuadros de almacén':reportTitle;
       const link=document.createElement('a');link.href=url;link.download=reportFilename(title,'xlsx');document.body.append(link);link.click();link.remove();
@@ -54,9 +55,9 @@ export function StockReports({data,search,query,onSearch}:{
   async function pdf(print=false){
     if(!validRange){toast.error('Revisa el intervalo de fechas.');return;}
     const preview=print?window.open('','_blank'):null;
-    setBusy(true);try{await withMinimumLoading(async()=>{const {createReportPdf,loadReportLogos}=await import('@/lib/report-pdf');const logos=await loadReportLogos();const report:Record<string,unknown>[]=rows.map(r=>({Código:r.code,Artículo:r.name,...(hasDescription?{Descripción:r.description?.trim()||''}:{}),Unidad:r.unit,'Cantidad inicial':r.opening,'Valor inicial Bs':amount(r.openingValue),'Entradas cantidad':r.incoming,'Entradas Bs':amount(r.incomingValue),'Salidas cantidad':r.outgoing,'Salidas Bs':amount(r.outgoingValue),'Cantidad final':r.closing,'Valor final Bs':amount(r.closingValue)}));
+    setBusy(true);try{await withMinimumLoading(async()=>{const {createReportPdf,loadReportLogos}=await import('@/lib/report-pdf');const logos=await loadReportLogos();const report:Record<string,unknown>[]=rows.map(r=>({Código:r.code,Ítem:r.name,...(hasDescription?{Descripción:r.description?.trim()||''}:{}),Unidad:r.unit,'Cantidad inicial':r.opening,'Valor inicial Bs':amount(r.openingValue),'Entradas cantidad':r.incoming,'Entradas Bs':amount(r.incomingValue),'Salidas cantidad':r.outgoing,'Salidas Bs':amount(r.outgoingValue),'Cantidad final':r.closing,'Valor final Bs':amount(r.closingValue)}));
       if(!report.length&&!selectedReport)throw new Error('Sin registros');
-      report.push({Código:'TOTALES Bs',Artículo:'',...(hasDescription?{Descripción:''}:{}),Unidad:'','Cantidad inicial':'-','Valor inicial Bs':amount(totals.opening),'Entradas cantidad':'-','Entradas Bs':amount(totals.incoming),'Salidas cantidad':'-','Salidas Bs':amount(totals.outgoing),'Cantidad final':'-','Valor final Bs':amount(totals.closing)});
+      report.push({Código:'TOTALES Bs',Ítem:'',...(hasDescription?{Descripción:''}:{}),Unidad:'','Cantidad inicial':'-','Valor inicial Bs':amount(totals.opening),'Entradas cantidad':'-','Entradas Bs':amount(totals.incoming),'Salidas cantidad':'-','Salidas Bs':amount(totals.outgoing),'Cantidad final':'-','Valor final Bs':amount(totals.closing)});
       const doc=createReportPdf(selectedReport?.title??'Detalle de Almacen',selectedReport?.records??report,`${data.viewer.name} · ${data.warehouses.map(w=>w.name).join(', ')} · ${rangeLabel} · Ítem/partida: ${category} · Búsqueda: ${query||'Todas'} · Expresado en bolivianos. ${stockReportNote}`,logos,undefined,{institutionalSignatures:reportKind==='institutional',movementLayout:reportKind==='detail'});
       const filename=reportFilename(reportTitle,'pdf');
       doc.setProperties({title:filename.replace(/\.pdf$/,'')});
@@ -103,7 +104,7 @@ export function StockReports({data,search,query,onSearch}:{
           </>:period!=='all'&&<DateField key="anchor" label="Fecha de referencia" text={anchor} onTextChange={setAnchor} required/>}
           <label>Partida<select value={category} onChange={event=>setCategory(event.target.value)}>
             <option value="all">Todas las partidas</option>
-            {Array.from(new Set([...data.materials.map(material=>material.category),...data.movements.map(movement=>movement.category)])).sort().map(item=><option key={item}>{item}</option>)}
+            {Array.from(new Set([...data.budgetItems.map(categoryLabel),...data.materials.map(material=>material.category),...data.movements.map(movement=>movement.category)])).sort(compareCategoryLabels).map(item=><option key={item}>{item}</option>)}
           </select></label>
         </>}
       </div>

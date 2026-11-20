@@ -26,7 +26,7 @@ export async function saveSupplier(input:unknown,tabId?:string) {
       await client.query("insert into audit_logs(id,user_id,module,action,entity_id,details,result) values($1,$2,'almacenes','supplier',$3,$4,'success')",[createId(),viewer.id,id,JSON.stringify(c)]);
       await client.query('commit');
     }catch(error){await client.query('rollback');throw error;}finally{client.release();}
-    revalidatePath('/dashboard');return {ok:true as const};
+    revalidatePath('/almacenes/[section]', 'page');return {ok:true as const};
   }catch(error){return {ok:false as const,error:error instanceof WarehouseError?error.message:error instanceof z.ZodError?'Revisa los datos del proveedor.':'No se pudo guardar. Comprueba que el NIT no esté repetido.'};}
 }
 
@@ -42,7 +42,7 @@ export async function setSupplierActive(input:unknown,tabId?:string) {
       await client.query("insert into audit_logs(id,user_id,module,action,entity_id,details,result) values($1,$2,'almacenes','supplier_active',$3,$4,'success')",[createId(),viewer.id,c.id,JSON.stringify({previous:previous.is_active,active:c.active})]);
       await client.query('commit');
     }catch(error){await client.query('rollback');throw error;}finally{client.release();}
-    revalidatePath('/dashboard');return {ok:true as const};
+    revalidatePath('/almacenes/[section]', 'page');return {ok:true as const};
   }catch(error){return {ok:false as const,error:error instanceof WarehouseError?error.message:'No se pudo actualizar el estado del proveedor. Intenta nuevamente.'};}
 }
 
@@ -108,6 +108,6 @@ export async function registerPurchase(form:FormData,tabId?:string) {
       }
       await client.query('commit');
     }catch(error){await client.query('rollback');throw error;}finally{client.release();}
-    revalidatePath('/dashboard');return {ok:true as const};
+    revalidatePath('/almacenes/[section]', 'page');return {ok:true as const};
   }catch(error){return {ok:false as const,error:error instanceof WarehouseError?error.message:error instanceof z.ZodError?'Completa la factura y todos los materiales (de 1 a 50 líneas), con cantidad, costo y descripción.':'No se pudo registrar la compra. Intenta nuevamente.'};}
 }

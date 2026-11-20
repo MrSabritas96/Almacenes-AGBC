@@ -8,6 +8,9 @@ export const warehouses = pgTable("warehouses", {
   location: text("location").notNull(),
   requestsEnabled: boolean("requests_enabled").notNull().default(true),
 });
+export const warehouseBudgetItems = pgTable("warehouse_budget_items", {
+  code: text("code").primaryKey(),
+});
 export const staffProfiles = pgTable("staff_profiles", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   warehouseId: text("warehouse_id").notNull().references(() => warehouses.id),
@@ -68,6 +71,7 @@ export const materialRequests = pgTable("material_requests", {
   deliveryOn: text("delivery_on"),
   deliveryPlace: text("delivery_place"),
   reviewedBy: text("reviewed_by").references(() => users.id),
+  reviewedByName: text("reviewed_by_name"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   deliveredAt: timestamp("delivered_at", { withTimezone: true }),

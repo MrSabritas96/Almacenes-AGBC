@@ -1,2 +1,5 @@
-import WarehouseAccess from "@/components/almacenes/access";
-export default function Page() { return <WarehouseAccess/>; }
+import { redirect } from "next/navigation";
+
+export default function Home() {
+  redirect("/almacenes/dashboard");
+}

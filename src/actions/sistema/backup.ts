@@ -48,7 +48,7 @@ export const crearRespaldo = secureAction(
     tables.forEach(visit);
     const { json, sqlOut } = await db.transaction(async (tx) => {
       const json: Record<string, unknown[]> = {};
-      let sqlOut = `-- Respaldo Almacenes AGBC ${new Date().toISOString()}\nBEGIN;\nSET LOCAL standard_conforming_strings = on;\n`;
+      let sqlOut = `-- Respaldo SIBA ${new Date().toISOString()}\nBEGIN;\nSET LOCAL standard_conforming_strings = on;\n`;
 
       for (const table of ordered) {
         const name = getTableName(table);

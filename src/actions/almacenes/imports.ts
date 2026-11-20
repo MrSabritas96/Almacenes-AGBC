@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { pool } from '@/db';
-import { warehouseContext } from '@/lib/warehouse';
+import { loadWarehouseBudgetItems, warehouseContext } from '@/lib/warehouse';
 import { maxWorkbookBytes, type WarehouseClosing } from '@/lib/warehouse-closing';
 import { WarehouseError } from '@/lib/warehouse-errors';
 import type { ClosingStatement } from '@/lib/warehouse-closing-statement';
@@ -24,7 +24,7 @@ export async function importWarehouseWorkbook(form: FormData, tabId?: string) {
       throw new WarehouseError('Selecciona un Excel .xlsx de hasta 2 MB.');
     }
     const bytes = Buffer.from(await file.arrayBuffer());
-    const imported = await parseWarehouseImport(kind, bytes);
+    const imported = await parseWarehouseImport(kind, bytes, kind === 'Materiales' ? await loadWarehouseBudgetItems() : undefined);
     const reviewKey = JSON.stringify([warehouseId, kind, imported.digest]);
     if (apply && reviewed !== reviewKey) throw new WarehouseError('El archivo o el destino cambió. Revisa la vista previa nuevamente.');
     const client = await pool.connect();
@@ -39,7 +39,7 @@ export async function importWarehouseWorkbook(form: FormData, tabId?: string) {
     } finally {
       client.release();
     }
-    if (apply) revalidatePath('/dashboard');
+    if (apply) revalidatePath('/almacenes/[section]', 'page');
     return {
       ok: true as const, apply, reviewKey, ...result,
       count: imported.kind === 'Cierre' ? imported.closing.detailRows.length : imported.rows.length,

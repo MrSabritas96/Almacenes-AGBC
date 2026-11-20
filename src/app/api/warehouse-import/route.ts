@@ -1,5 +1,5 @@
 import { pool } from '@/db';
-import { warehouseContext } from '@/lib/warehouse';
+import { loadWarehouseBudgetItems, warehouseContext } from '@/lib/warehouse';
 import { templateBytes } from '@/lib/warehouse-import';
 
 export async function GET(request: Request) {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   let bytes: Buffer;
   if (kind === 'Materiales' || kind === 'Proveedores' || kind === 'Empleados') {
     filename = `Plantilla - ${kind}.xlsx`;
-    bytes = await templateBytes(kind);
+    bytes = await templateBytes(kind, kind === 'Materiales' ? await loadWarehouseBudgetItems() : undefined);
   } else if (id) {
     const { rows } = await pool.query<{ filename: string; workbook_base64: string }>(
       statement

@@ -3,14 +3,11 @@
  * → conflictos de merge triviales). Los esquemas de módulo viven en archivos propios:
  *   activos.schema.ts       (María)
  *   almacenes.schema.ts     (Walter)
- *   conciliaciones.schema.ts (Manuel)
  */
 export * from "./auth.schema";
 export * from "./rbac.schema";
 export * from "./audit.schema";
 
-// ── Módulos (descomentar al crear cada archivo) ──
-// export * from "./activos.schema";
-// export * from "./almacenes.schema";
-// export * from "./conciliaciones.schema";
+// ── Módulos ──
+export * from "./activos.schema";
 export * from "./almacenes.schema";

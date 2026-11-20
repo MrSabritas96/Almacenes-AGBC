@@ -7,6 +7,7 @@ import { EventEmitter } from 'node:events';
 const source = await readFile(new URL('../server.js', import.meta.url), 'utf8');
 let middleware, onConnection, recheck, expiry, queryFailure = false;
 let authorized = true;
+let cookieSession = {session: {token: 'shared-token'}};
 const cleared = new Set();
 const queries = [];
 const httpServer = new EventEmitter();
@@ -33,7 +34,12 @@ const dependencies = {
 vm.runInNewContext(source, {
   require: name => { assert(name in dependencies); return dependencies[name]; },
   __dirname: '/test', process: { env: { NODE_ENV: 'production' }, exit: () => assert.fail('unexpected exit') },
-  console: { log() {}, error: assert.fail }, URL, Date,
+  console: { log() {}, error: assert.fail }, URL, Date, AbortSignal,
+  fetch: async (url, options) => {
+    assert.equal(url, 'http://127.0.0.1:3000/api/auth/get-session');
+    assert.equal(options.headers.cookie, 'better-auth.session_token=signed-cookie');
+    return {ok: true, json: async () => cookieSession};
+  },
   setTimeout: callback => { expiry = callback; return 'expiry'; },
   clearTimeout: handle => cleared.add(handle),
   setInterval: callback => { recheck = callback; return 'recheck'; },
@@ -60,6 +66,15 @@ async function authenticate(client) {
 assert(await authenticate(socket('https://evil.example')), 'Rechaza otro origen');
 const invalid = socket(); invalid.handshake.auth.tabId = '../invalid';
 assert(await authenticate(invalid), 'Rechaza identificadores de pestaña inválidos');
+
+const shared = socket();
+shared.handshake.auth = {};
+shared.handshake.headers.cookie = 'better-auth.session_token=signed-cookie';
+assert.equal(await authenticate(shared), undefined, 'Acepta la sesión compartida validada por Better Auth');
+assert.equal(shared.data.sessionToken, 'shared-token');
+cookieSession = null;
+assert(await authenticate(shared), 'Rechaza cookies globales sin sesión válida');
+cookieSession = {session: {token: 'shared-token'}};
 authorized = false;
 assert(await authenticate(socket()), 'Rechaza sesiones revocadas al conectar');
 authorized = true;

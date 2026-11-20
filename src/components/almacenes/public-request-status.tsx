@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { withMinimumLoading } from '@/lib/loading-time';
 import { PostalLoader } from './postal-loader';
 import { useEffect, useState } from 'react';
@@ -55,7 +56,7 @@ export default function PublicRequestStatus() {
     }
   }
   const requestCount = requests.size;
-  return <main className="warehouse-access public-intake"><header className="access-header"><Brand/><a href="/almacenes" className="text-link">Volver al acceso</a></header>
+  return <main className="warehouse-access public-intake"><header className="access-header"><Brand/><Link href="/almacenes" className="text-link">Volver al acceso</Link></header>
     <section className="access-panel intake-panel request-status-panel"><h1>Consultar mis solicitudes</h1><p className="muted">No necesitas una cuenta ni conservar el código del comprobante. Ingresa tu CI tal como lo registraste para ver todas tus solicitudes y las respuestas del almacén.</p>
       <form className="access-form status-lookup-form" onSubmit={submit} aria-busy={busy}>
         <label>CI (con extensión si la registraste)<input name="document" required minLength={3} maxLength={40} placeholder="Ej.: 1234567-LP" autoComplete="off" spellCheck={false}/></label>
@@ -92,7 +93,7 @@ export default function PublicRequestStatus() {
           </div>
         </article>)}
       </div>}
-      <div className="public-request-actions"><a href="/solicitar-material" className="secondary-button">Solicitar material</a><a href="/almacenes" className="text-link">Volver al acceso</a></div>
+      <div className="public-request-actions"><a href="/solicitar-material" className="secondary-button">Solicitar material</a><Link href="/almacenes" className="text-link">Volver al acceso</Link></div>
     </section>
   </main>;
 }

@@ -1,4 +1,4 @@
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Dashboard valida su sesión por pestaña antes de cargar cualquier dato.
+  // Cada módulo valida la sesión y sus permisos antes de cargar datos.
   return children;
 }

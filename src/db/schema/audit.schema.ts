@@ -11,7 +11,7 @@ export const auditLogs = pgTable(
     id: text("id").primaryKey().$defaultFn(() => createId()),
     userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
     action: text("action").notNull(), // create | update | delete | login | backup ...
-    module: text("module").notNull(), // activos | almacenes | conciliaciones | sistema
+    module: text("module").notNull(), // activos | almacenes | sistema
     entity: text("entity"),
     entityId: text("entity_id"),
     ipAddress: text("ip_address"),

@@ -10,7 +10,7 @@ export function StockDetailTable({rows}:{rows:ReturnType<typeof stockSummary>}) 
     <colgroup>{weights.map((weight,index)=><col key={index} style={{width:`${weight/weights.reduce((sum,w)=>sum+w,0)*100}%`}}/>)}</colgroup>
     <thead>
       <tr>
-        {['Código','Artículo',...(hasDescription?['Descripción']:[]),'Unidad'].map(label=><th key={label} rowSpan={2} scope="col">{label}</th>)}
+        {['Código','Ítem',...(hasDescription?['Descripción']:[]),'Unidad'].map(label=><th key={label} rowSpan={2} scope="col">{label}</th>)}
         {['Saldos iniciales','Ingresos','Egresos','Saldo final'].map(label=><th key={label} colSpan={2} scope="colgroup">{label}</th>)}
       </tr>
       <tr>{Array.from({length:4},(_,index)=><QuantityValue key={index}/>)}</tr>

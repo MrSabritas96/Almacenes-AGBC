@@ -28,7 +28,24 @@ const httpServer = createServer((req, res) => {
   return handle(req, res);
 });
 
+async function reportExistingDevServer() {
+  const host = hostname === "0.0.0.0" ? "127.0.0.1" : hostname === "::" ? "[::1]" : hostname;
+  try {
+    const response = await fetch(`http://${host}:${port}/_agbc/dev-server`, { signal: AbortSignal.timeout(2000) });
+    const existing = response.ok ? await response.json() : null;
+    if (existing?.project !== project) return false;
+    console.log(`> El sistema ya está iniciado o iniciando (PID ${existing.pid}). Abre http://localhost:${port}`);
+    console.log("> No se inició otra instancia. Para detenerlo, usa Ctrl+C en la terminal original.");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function start() {
+  // En Windows el bind global puede coexistir con otro servidor en loopback.
+  if (dev && (hostname === "0.0.0.0" || hostname === "::") && await reportExistingDevServer()) return;
+
   // Reservar el puerto antes de preparar Next evita competir por su bloqueo de desarrollo.
   try {
     await new Promise((resolve, reject) => {
@@ -41,18 +58,7 @@ async function start() {
     });
   } catch (error) {
     if (error.code !== "EADDRINUSE") throw error;
-    if (dev) {
-      const host = hostname === "0.0.0.0" ? "127.0.0.1" : hostname === "::" ? "[::1]" : hostname;
-      try {
-        const response = await fetch(`http://${host}:${port}/_agbc/dev-server`, { signal: AbortSignal.timeout(2000) });
-        const existing = response.ok ? await response.json() : null;
-        if (existing?.project === project) {
-          console.log(`> El sistema ya está iniciado o iniciando (PID ${existing.pid}). Abre http://localhost:${port}`);
-          console.log("> No se inició otra instancia. Para detenerlo, usa Ctrl+C en la terminal original.");
-          return;
-        }
-      } catch { /* Un servicio ajeno o que no responde no se considera una instancia propia. */ }
-    }
+    if (dev && await reportExistingDevServer()) return;
     throw new Error(`El puerto ${port} está ocupado por otro servicio. No se cerró ningún proceso.`);
   }
 
@@ -72,7 +78,7 @@ async function start() {
   const activeSocketSession = async (token) => {
     const { rows } = await socketDb.query(`select s.expires_at from sessions s join users u on u.id=s.user_id
       where s.token=$1 and s.expires_at>now() and u.is_active
-      and exists(select 1 from user_roles ur join roles r on r.id=ur.role_id where ur.user_id=u.id and r.name in ('superadmin','admin_almacenes'))`, [token]);
+      and exists(select 1 from user_roles ur join roles r on r.id=ur.role_id where ur.user_id=u.id and r.name='superadmin')`, [token]);
     return rows[0];
   };
   io.use(async (socket, next) => {
@@ -80,10 +86,23 @@ async function start() {
       const origin = socket.handshake.headers.origin;
       if (origin && new URL(origin).host !== socket.handshake.headers.host && origin !== process.env.NEXT_PUBLIC_APP_URL) throw new Error('Origen inválido.');
       const tabId = socket.handshake.auth?.tabId;
-      if (typeof tabId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tabId)) throw new Error('Sesión inválida.');
-      const cookieName = `agbc-tab-${tabId}`;
-      const raw = (socket.handshake.headers.cookie ?? '').split(';').map(v=>v.trim()).find(v=>v.startsWith(`${cookieName}=`));
-      const token = raw ? decodeURIComponent(raw.slice(cookieName.length+1)) : '';
+      let token;
+      if (tabId !== undefined) {
+        if (typeof tabId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tabId)) throw new Error('Sesión inválida.');
+        const cookieName = `agbc-tab-${tabId}`;
+        const raw = (socket.handshake.headers.cookie ?? '').split(';').map(v=>v.trim()).find(v=>v.startsWith(`${cookieName}=`));
+        token = raw ? decodeURIComponent(raw.slice(cookieName.length+1)) : '';
+      } else {
+        // Better Auth valida la firma y la vigencia de la cookie compartida.
+        const host = hostname === '0.0.0.0' ? '127.0.0.1' : hostname === '::' ? '[::1]' : hostname;
+        const response = await fetch(`http://${host}:${port}/api/auth/get-session`, {
+          headers: {cookie: socket.handshake.headers.cookie ?? ''},
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) throw new Error('Sesión inválida.');
+        token = (await response.json())?.session?.token;
+      }
+      if (!token) throw new Error('Sesión inválida.');
       const session = await activeSocketSession(token);
       if (!session) throw new Error('Sesión inválida.');
       socket.data.sessionToken = token;

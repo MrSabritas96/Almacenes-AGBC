@@ -7,8 +7,8 @@ import "@/styles/experience.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Almacenes AGBC",
-  description: "Plataforma institucional AGBC: Activos, Almacenes y Conciliaciones.",
+  title: "SIBA",
+  description: "Sistema Integral de Bienes y almacenes",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,17 +1,19 @@
 "use server";
 import { randomUUID } from 'node:crypto';
 import { cookies } from 'next/headers';
-import { z } from 'zod';
 import { getSession } from '@/lib/auth/session';
 import { warehouseContext } from '@/lib/warehouse';
-import { warehouseTabCookie, warehouseTabToken } from '@/lib/warehouse-tab';
+import { warehouseTabCookie, warehouseTabId, warehouseTabToken } from '@/lib/warehouse-tab';
 import { pool } from '@/db';
 
-export async function openWarehouseTab(token: unknown) {
-  const credential = z.string().min(1).max(512).parse(token);
-  await warehouseContext(undefined, credential);
-  const session = await getSession(credential);
+export async function openWarehouseTab(previousTab?: string) {
+  const session = await getSession();
   if (!session) throw new Error('La sesión ha expirado.');
+  await warehouseContext(undefined, session.session.token);
+  const previous = warehouseTabId.safeParse(previousTab);
+  if (previous.success && (await warehouseTabToken(previous.data)) === session.session.token) {
+    return { tabId: previous.data };
+  }
   const tabId = randomUUID();
   (await cookies()).set(warehouseTabCookie(tabId), session.session.token, {
     httpOnly:true, secure:process.env.NODE_ENV==='production', sameSite:'lax', path:'/', expires:new Date(session.session.expiresAt),

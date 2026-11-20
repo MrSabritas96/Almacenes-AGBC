@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import { addExcelHeading, excelBannerPath, styleExcelColumns } from './excel-heading';
 import { institutionalStockReport, stockReportNote, stockReportTitles, type StockReportKind } from './institutional-stock-report';
-import { categoryInfo } from './warehouse-reference';
+import { categoryInfo, type BudgetItem } from './warehouse-reference';
 import type { stockSummary } from './stock-report';
 import type { Purchase } from './warehouse';
 
@@ -11,6 +11,7 @@ type WorkbookInput = {
   includeEmpty: boolean; selected: StockReportKind | 'detail';
   scope?: 'selected' | 'all' | 'eeff';
   banner: string;
+  categories?: readonly BudgetItem[];
 };
 const names = { reconciliation: 'Conciliación', purchases: 'Ingresos por compras', outgoing: 'Salidas por partida', balances: 'Saldos por partida', institutional: 'Resumen institucional', detail: 'Detalle de Almacen' };
 const headerRow = 7;
@@ -81,7 +82,7 @@ export function createStockWorkbook(input: WorkbookInput) {
   const institutional = sheet('institutional', headers, [7, 57, 22, 24, 22, 24]);
   const hasDescription=input.rows.some(row=>row.description?.trim());
   const firstQuantity=hasDescription?7:6;
-  const detail = sheet('detail', ['N°', 'Código', 'Artículo', 'Unidad', 'Partida', ...(hasDescription?['Descripción']:[]), 'Cantidad inicial', 'Entradas cantidad', 'Salidas / reservas cantidad', 'Cantidad final', 'Saldo inicial Bs', 'Entradas Bs', 'Salidas / reservas Bs', 'Saldo final Bs'], [7, 20, 48, 18, 16, ...(hasDescription?[48]:[]), 18, 18, 20, 18, 22, 22, 22, 22]);
+  const detail = sheet('detail', ['N°', 'Código', 'Ítem', 'Unidad', 'Partida', ...(hasDescription?['Descripción']:[]), 'Cantidad inicial', 'Entradas cantidad', 'Salidas / reservas cantidad', 'Cantidad final', 'Saldo inicial Bs', 'Entradas Bs', 'Salidas / reservas Bs', 'Saldo final Bs'], [7, 20, 48, 18, 16, ...(hasDescription?[48]:[]), 18, 18, 20, 18, 22, 22, 22, 22]);
   const detailColumn=(offset:number)=>detail.getColumn(firstQuantity+offset).letter;
   input.rows.forEach((r, index) => {
     const n = first + index;
@@ -109,7 +110,7 @@ export function createStockWorkbook(input: WorkbookInput) {
   const purchaseAmount = input.purchases.reduce((sum, p) => sum + p.quantity * Number(p.unit_cost), 0);
   purchases.getCell(purchaseTotal, 4).value = 'TOTAL';
   formula(purchases, purchaseTotal, 10, purchaseTotal > first ? `SUM(J${first}:J${purchaseTotal - 1})` : '0', purchaseAmount);
-  const grouped = institutionalStockReport('balances', input.rows, input.purchases, input.from, input.to, input.includeEmpty, value => value);
+  const grouped = institutionalStockReport('balances', input.rows, input.purchases, input.from, input.to, input.includeEmpty, value => value, input.categories);
   grouped.records.slice(0, -1).forEach((record, index) => {
     const n = first + index, values = Object.values(record);
     balances.getRow(n).values = values;

@@ -4,7 +4,7 @@ import typescript from "eslint-config-next/typescript";
 const eslintConfig = [
   ...coreWebVitals,
   ...typescript,
-  { ignores: [".next/**", "node_modules/**", "drizzle/**", "server.js"] },
+  { ignores: [".next/**", "node_modules/**", "drizzle/**", "backups/**", "output/**", "server.js"] },
 ];
 
 export default eslintConfig;

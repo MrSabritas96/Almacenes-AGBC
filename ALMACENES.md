@@ -1,21 +1,20 @@
 # Almacenes AGBC
 
-Acceso administrativo: `/almacenes`, por correo o usuario y contraseña, sin selector de rol. El servidor identifica el rol real y aplica el almacén asignado en cada consulta y operación. El formulario para empleados es `/solicitar-material`, sin cuenta.
+La cuenta principal `admin` abre Almacenes y Activos Fijos desde `/login`. El formulario para empleados está en `/solicitar-material` y se usa sin cuenta.
 
 ## Preparación
 
 1. Configurar PostgreSQL y las variables de `.env.example` en `.env`.
-2. Definir `SEED_ADMIN_PASSWORD` y `SEED_WAREHOUSE_PASSWORD` (al menos 8 caracteres para cuentas nuevas).
+2. Definir `SEED_ADMIN_PASSWORD` con al menos 8 caracteres para una cuenta nueva.
 3. Ejecutar `pnpm db:migrate` y `pnpm db:seed`.
 4. Iniciar con `pnpm dev` o con `pnpm build` y `pnpm start`.
 
-El seed es repetible: conserva las cuentas, contraseñas y perfiles existentes. Crea un almacén central y las cuentas que falten. No carga existencias ficticias. Las cuentas iniciales son `admin` y `almacen`. Solo el SuperAdmin administra las cuentas de administradores desde Administradores. Los empleados se registran en fichas sin credenciales. Las contraseñas se guardan como hashes mediante Better Auth; los valores de configuración solo están en `.env`, excluido de Git.
+El seed crea el almacén central y la cuenta principal si faltan. Conserva la contraseña y el perfil existentes. Los empleados se registran en fichas sin credenciales.
 
 ## Roles
 
-- **SuperAdmin:** inventario y solicitudes de todos los almacenes; creación de almacenes; creación y edición de administradores; gestión de fichas sin cuenta; eliminación y reactivación de cuentas. No modifica otras cuentas SuperAdmin desde esta nómina.
-- **Administrador de almacén:** materiales de su almacén, categorías, unidades, ubicación, stock mínimo y ajustes con motivo; revisión de solicitudes; registro de entregas; empleados, materiales recibidos e historial; exportación del inventario.
-- **Solicitante:** llena el formulario público con nombre, CI y extensión, cargo, unidad, material, cantidad, fecha y motivo. El teléfono es opcional. Recibe un número de comprobante; coordina respuesta y recojo con la administradora. El catálogo no publica stock ni historiales personales.
+- **SuperAdmin:** administra inventario, solicitudes, fichas de empleados y configuración de todos los almacenes. También administra Activos Fijos.
+- **Solicitante:** llena el formulario público con sus datos y recibe un comprobante para coordinar la entrega con administración.
 
 ## Stock y solicitudes
 
@@ -40,13 +39,13 @@ La eliminación de materiales los retira del inventario activo y conserva sus mo
 - `pnpm build`
 - Con el servidor local iniciado: `node tests/warehouse-integration.mjs`
 
-La prueba de integración usa cuentas administrativas, fichas y materiales temporales; verifica solicitud sin cuenta, reintento idempotente, aislamiento, concurrencia, reservas, entrega con CI, espera, rechazo, actas y materiales previos; luego elimina sus registros temporales. Ejecutarla únicamente contra una base local de desarrollo. La vista Movimientos utiliza todos los registros; el historial completo de solicitudes conserva las fechas y respuestas.
+La prueba de integración usa cuentas administrativas, fichas y materiales temporales; verifica solicitud sin cuenta, reintento idempotente, acceso administrativo, concurrencia, reservas, entrega con CI, espera, rechazo, actas y materiales previos; luego elimina sus registros temporales. Ejecutarla únicamente contra una base local de desarrollo. La vista Movimientos utiliza todos los registros; el historial completo de solicitudes conserva las fechas y respuestas.
 
 ## Identidad institucional
 
 Paleta azul `#0b3b83` y amarillo `#ffc400`, tomada de las referencias oficiales SIGEC y POSTAR. El logotipo y la mascota se conservan localmente en `public/brand`; sus fuentes son `https://sigec.correos.gob.bo/media/logos/LOGO%2019-2-26.png` y `https://sigec.correos.gob.bo/media/monito.png`. Las referencias de diseño son https://sigec.correos.gob.bo/, https://postar.correos.gob.bo/ y https://www.correos.gob.bo/.
 
-Cada administrador puede tener un nombre de usuario único, con entre 3 y 30 letras, números o guiones bajos. Se normaliza a minúsculas. El SuperAdmin lo administra desde la nómina. La contraseña mínima es de 8 caracteres. Para verificar los accesos administrativos y el rechazo de empleados: `node tests/warehouse-access.mjs`.
+Para verificar el acceso de la cuenta principal a ambos módulos, ejecutar `node tests/warehouse-access.mjs`.
 
 ## Menú y reportes PDF
 
@@ -66,7 +65,7 @@ Los PDF usan un formato de informe institucional, azul y amarillo, encabezado, f
 
 ## Apertura y cierre de solicitudes
 
-En Solicitudes → Recepción de solicitudes, el administrador de almacén puede habilitar o cerrar el formulario de su almacén. El SuperAdmin puede hacerlo en cualquiera. El estado se guarda en PostgreSQL y comienza habilitado para almacenes existentes y nuevos. El formulario público solo ofrece almacenes habilitados. Si se cierra durante el llenado, el servidor rechaza el envío. El historial anterior sigue disponible para la administradora. El servidor comprueba el estado al enviar y comparte un bloqueo de la fila del almacén con el cierre para evitar pedidos posteriores a un cierre ya confirmado. Cada cambio registra responsable, almacén y estado en auditoría.
+En Solicitudes → Recepción de solicitudes, el SuperAdmin puede habilitar o cerrar el formulario de cualquier almacén. El estado se guarda en PostgreSQL y comienza habilitado para almacenes existentes y nuevos. El formulario público solo ofrece almacenes habilitados. Si se cierra durante el llenado, el servidor rechaza el envío. El historial anterior sigue disponible para la administradora. El servidor comprueba el estado al enviar y comparte un bloqueo de la fila del almacén con el cierre para evitar pedidos posteriores a un cierre ya confirmado. Cada cambio registra responsable, almacén y estado en auditoría.
 
 La migración `0003_heavy_captain_midlands.sql` añade únicamente `warehouses.requests_enabled`, sin eliminar registros. Para revertir el despliegue, restaurar primero la versión anterior de la aplicación y después, si se necesita, eliminar esa columna; se perderá solo la configuración de apertura/cierre, no las solicitudes. La prueba `node tests/warehouse-integration.mjs` verifica permisos, aislamiento, bloqueo, reapertura y conservación del historial.
 
@@ -76,7 +75,7 @@ La configuración local usa el servicio de PostgreSQL de Windows en `127.0.0.1:5
 
 ## Materiales por empleado y actas de entrega
 
-Materiales por empleado permite a administradores registrar una ficha de lo que cada empleado ya posee: nombre, categoría, cantidad, unidad, serie, estado físico, ubicación, fecha y observaciones. Se accede también desde Fichas e historial → Ver materiales. Este levantamiento inicial no descuenta inventario. La ficha es privada: la consultan la administradora del almacén y el SuperAdmin. El formulario público no permite consultar ni modificar fichas anteriores. El administrador se limita a su almacén y el SuperAdmin puede gestionar todos.
+Materiales por empleado permite a administradores registrar una ficha de lo que cada empleado ya posee: nombre, categoría, cantidad, unidad, serie, estado físico, ubicación, fecha y observaciones. Se accede también desde Fichas e historial → Ver materiales. Este levantamiento inicial no descuenta inventario. La ficha es privada: la consultan el SuperAdmin. El formulario público no permite consultar ni modificar fichas anteriores.
 
 Las fichas se pueden corregir o eliminar con un motivo obligatorio. La eliminación inicial es lógica y conserva el registro y la auditoría. Las entregas permiten corregir cantidad o destinatario del mismo almacén: la diferencia se ajusta transaccionalmente en el stock y se registra un movimiento. Anular una entrega registrada por error restituye su cantidad una sola vez, marca la solicitud como Entrega anulada y conserva el motivo; no representa consumo ni una devolución física. Para un material equivocado, anular y tramitar la entrega correcta. El almacén de una ficha no se modifica; se conserva el historial de su ubicación original.
 
@@ -278,3 +277,9 @@ La recodificación utiliza el mismo script con respaldo completo, transacción y
 - Todo el historial toma las fechas reales de movimientos y compras autorizados; no aplica un año inicial arbitrario. Si no hay operaciones, usa la fecha actual de Bolivia. Mantiene los filtros de búsqueda y partida, y el alcance del almacén.
 - Pantalla, PDF, impresión y Excel (cuadro seleccionado o todos los cuadros) usan las mismas fechas. Los saldos previos a un rango personalizado siguen contando como apertura, sin alterar las existencias.
 - Verificación: pruebas de periodos/saldos, cuadros institucionales y Excel; en navegador se comprobó un rango con una operación, el bloqueo de fechas invertidas y el historial completo con sus tres operaciones de prueba.
+
+# Códigos presupuestarios en Almacenes (13/11/2026)
+
+- El inventario inicial muestra las 29 partidas con los nombres de la captura del sistema anterior, en orden alfabético por nombre, y conserva los códigos del Clasificador por Objeto del Gasto 2019 (MEFP, págs. 49–60 impresas). El código 39990 es la partida específica que se ve en la captura y 39900 es su agrupador. «Víveres» es el nombre que muestra Almacenes para 31110. Las denominaciones del clasificador también se reconocen al leer datos existentes e importar plantillas.
+- «Añadir partida» habilita otras partidas oficiales de servicios, materiales o bienes de uso en todos los almacenes. La selección se comparte con formularios, filtros, plantillas Excel y reportes. Los códigos PAR, CAT y demás etiquetas anteriores siguen reconocidos al leer datos e importar plantillas.
+- Aplicar `pnpm db:migrate` para guardar las partidas adicionales. En la base local, `pnpm exec tsx scripts/recode-categories.mts --apply` actualiza solo las etiquetas existentes con respaldo y verificación de integridad. Los códigos únicos de los ítems y los cierres históricos originales se conservan.

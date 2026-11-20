@@ -1,4 +1,4 @@
-/** Prueba local: fichas sin cuentas, aprobación/entrega y aislamiento por almacén. Limpia solo sus fixtures. */
+/** Prueba local: fichas sin cuentas, aprobación/entrega y acceso administrativo. Limpia solo sus fixtures. */
 import "dotenv/config";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -12,7 +12,7 @@ const base=process.env.TEST_APP_URL??'http://localhost:3000';
 assert(['localhost','127.0.0.1'].includes(new URL(base).hostname));
 assert(['localhost','127.0.0.1','[::1]'].includes(new URL(process.env.DATABASE_URL!).hostname));
 const prefix=`intake-${randomUUID()}`;
-const w1=`${prefix}-w1`,w2=`${prefix}-w2`,m1=`${prefix}-m1`,m2=`${prefix}-m2`,a1=`${prefix}-a1`,a2=`${prefix}-a2`;
+const w1=`${prefix}-w1`,w2=`${prefix}-w2`,m1=`${prefix}-m1`,m2=`${prefix}-m2`,a1=`${prefix}-a1`;
 const extraMaterial=`${prefix}-extra`;
 const password=randomUUID(),document=`QA${Date.now()}`;
 let actionId='',receiptId='';
@@ -31,11 +31,12 @@ async function action(cookie:string,command:unknown,id=actionId){
 async function main(){
 try{
   await pool.query('insert into warehouses(id,name,location) values($1,$2,$2),($3,$4,$4)',[w1,'Prueba aislada 1',w2,'Prueba aislada 2']);
-  for(const [id,w] of [[a1,w1],[a2,w2]]){
+  {
+    const id=a1;
     await pool.query('insert into users(id,name,email) values($1,$2,$3)',[id,'Administración de prueba',`${id}@example.test`]);
     await pool.query("insert into accounts(id,user_id,account_id,provider_id,password) values($1,$2,$2,'credential',$3)",[`${id}-credential`,id,await hashPassword(password)]);
-    await pool.query("insert into user_roles(user_id,role_id) select $1,id from roles where name='admin_almacenes'",[id]);
-    await pool.query('insert into staff_profiles(user_id,warehouse_id) values($1,$2)',[id,w]);
+    await pool.query("insert into user_roles(user_id,role_id) select $1,id from roles where name='superadmin'",[id]);
+    await pool.query('insert into staff_profiles(user_id,warehouse_id) values($1,$2)',[id,w1]);
   }
   for(const [id,w] of [[m1,w1],[m2,w2]]){
     await pool.query("insert into materials(id,warehouse_id,code,name,category,unit,stock,minimum,location) values($1,$2,$1,'Material de prueba','Prueba','unidad',10,1,'Prueba')",[id,w]);
@@ -46,7 +47,7 @@ try{
   assert.match(first.reference,/^SOL-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/,'Comprobante corto y legible');
   const duplicate=await receiveMaterialRequest(input);assert(duplicate.ok);assert.equal(duplicate.reference,first.reference);
   const again=await receiveMaterialRequest({...input,name:'No debe sobrescribir la ficha',document:document.toLowerCase(),submissionKey:randomUUID(),quantity:1});assert(again.ok,JSON.stringify(again));
-  const otherRequest=await receiveMaterialRequest({...input,warehouseId:w2,materialId:m2,document:'OTH'+randomUUID().replaceAll('-','').slice(0,16),submissionKey:randomUUID()});assert(otherRequest.ok);
+  const otherRequest=await receiveMaterialRequest({...input,warehouseId:w2,materialId:m2,document:'OTH'+randomUUID().replaceAll('-','').slice(0,16),submissionKey:randomUUID()});assert(otherRequest.ok,JSON.stringify(otherRequest));
   const initialStatus=await lookupMaterialRequests({document:` ${document.toLowerCase()} `,reference:first.reference});assert(initialStatus.ok);assert.equal(initialStatus.requests.length,1);
   assert(initialStatus.requests.every(r=>r.status==='pending'&&r.reference!==otherRequest.reference),'Consulta limitada al CI exacto');
   const publicReceipt=await loadPublicRequestReceipt({document,reference:first.reference});assert(publicReceipt.ok);assert.equal(publicReceipt.data.reference,first.reference);assert.equal(publicReceipt.data.requester.document,document);assert.equal(publicReceipt.data.requester.name,input.name);assert.equal(publicReceipt.data.purpose,input.purpose);assert.equal(publicReceipt.data.material,'Material de prueba');assert.equal(publicReceipt.data.quantity,3);assert(!('phone' in publicReceipt.data.requester));
@@ -102,15 +103,15 @@ try{
   const closedCatalog=await requestCatalog();assert(!closedCatalog.people.some(p=>p.warehouse_id===w1),'Un almacén cerrado no publica su directorio');
   assert(!(await receiveMaterialRequest({...input,submissionKey:randomUUID()})).ok,'Cierre de formulario aplicado en servidor');
   await pool.query('update warehouses set requests_enabled=true where id=$1',[w1]);
-  const c1=await login(a1),c2=await login(a2);
+  const c1=await login(a1),c2='';
   const dashboard=await fetch(`${base}/dashboard`,{headers:{Cookie:c1}});assert((await dashboard.text()).includes(document));
-  const other=await fetch(`${base}/dashboard`,{headers:{Cookie:c2}});assert(!(await other.text()).includes(document),'Historial privado aislado por almacén');
+  const other=await fetch(`${base}/dashboard`,{headers:{Cookie:c2}});assert(!(await other.text()).includes(document),'Historial privado requiere sesión');
   assert.equal((await fetch(`${base}/consultar-solicitud`)).status,200,'Consulta accesible sin cuenta');
   const manifest=JSON.parse(readFileSync(existsSync('.next/dev/server/server-reference-manifest.json')?'.next/dev/server/server-reference-manifest.json':'.next/server/server-reference-manifest.json','utf8'));
   for(const [id,value] of Object.entries(manifest.node) as [string,{exportedName?:string}][]){if(value.exportedName==='warehouseAction')actionId=id;if(value.exportedName==='getDeliveryReceipt')receiptId=id;}
   assert(actionId&&receiptId,'Acciones administrativas compiladas');
-  const materialInput={type:'material',warehouseId:w1,name:`${prefix}-auto`,category:'Prueba',unit:'Unidad',stock:0,minimum:2,location:'Prueba',reason:'Alta con código automático'};
-  const generated=await Promise.all([action(c1,materialInput),action(c2,{...materialInput,warehouseId:w2})]);
+  const materialInput={type:'material',warehouseId:w1,name:`${prefix}-auto`,category:'25500',unit:'Unidad',stock:0,minimum:2,location:'Prueba',reason:'Alta con código automático'};
+  const generated=await Promise.all([action(c1,materialInput),action(c1,{...materialInput,warehouseId:w2})]);
   assert(generated.every(result=>result.ok),JSON.stringify(generated));
   const automatic=(await pool.query('select id,code,warehouse_id from materials where name=$1',[materialInput.name])).rows;
   assert.equal(automatic.length,2);assert.equal(new Set(automatic.map(m=>m.code)).size,2,'Altas simultáneas en distintos almacenes tienen códigos únicos');
@@ -125,10 +126,10 @@ try{
   assert(!(await action('',{document:'NOREGISTRADO'+document,reference:first.reference},publicReceiptId)).ok,'Otro CI no accede a datos del comprobante');
   const profile={type:'person',id:person.id,warehouseId:w1,name:'Persona verificada por administración',document,regional:'La Paz',position:'Pruebas',department:'Pruebas',phone:''};
   assert((await action(c1,profile)).ok,'La administradora corrige la ficha sin crear cuenta');
-  assert(!(await action(c2,{...profile,warehouseId:w2})).ok,'Otra administradora no modifica la ficha');
+  assert(!(await action(c2,{...profile,warehouseId:w2})).ok,'Sin sesión no se modifica la ficha');
   assert((await action(c1,{...profile,id:undefined,document:'MANUAL'+document})).ok,'Registro manual de ficha sin contraseña');
   assert.deepEqual((await pool.query('select (select count(*) from users) users,(select count(*) from accounts) accounts')).rows[0],accountsBefore,'Registrar fichas manualmente tampoco crea credenciales');
-  assert(!(await action(c2,{type:'review',id:first.reference,status:'approved',response:'Prueba',deliveryOn:'2099-01-01'})).ok,'Otra administradora no procesa esta solicitud');
+  assert(!(await action(c2,{type:'review',id:first.reference,status:'approved',response:'Prueba',deliveryOn:'2099-01-01'})).ok,'Sin sesión no se procesa la solicitud');
   const approvals=await Promise.all([1,2].map(()=>action(c1,{type:'review',id:first.reference,status:'approved',response:'Prueba',deliveryOn:'2099-01-01'})));
   assert.equal((await pool.query('select delivery_place from material_requests where id=$1',[first.reference])).rows[0].delivery_place,'Prueba aislada 1','La aprobación sin campo de lugar usa el almacén correspondiente');
   assert.equal(approvals.filter(result=>result.ok).length,1,'Una sola reserva ante aprobaciones concurrentes');
@@ -150,18 +151,18 @@ try{
   await checkStatus(first.reference,'cancelled');
   assert.deepEqual((await pool.query('select (select count(*) from users) users,(select count(*) from accounts) accounts')).rows[0],accountsBefore,'Consultar estados no crea usuarios ni credenciales');
   assert.equal((await pool.query('select stock from materials where id=$1',[m1])).rows[0].stock,10);
-  console.log('OK: solicitud sin cuenta, CI sin duplicados, reintento idempotente, cierre, stock, consulta pública por CI y comprobante sin datos ajenos, todos los estados, entrega con CI, acta, materiales previos y aislamiento por almacén.');
+  console.log('OK: solicitud sin cuenta, CI sin duplicados, reintento idempotente, cierre, stock, consulta pública por CI y comprobante sin datos ajenos, todos los estados, entrega con CI, acta, materiales previos y acceso administrativo.');
 }finally{
   // Solo identificadores de fixtures de esta ejecución.
-  await pool.query("delete from notificaciones where warehouse_id=any($1) or user_id=any($2)",[[w1,w2],[a1,a2]]);
-  await pool.query("delete from audit_logs where user_id=any($1) or entity_id in(select id from material_requests where material_id=any($2))",[[a1,a2],[m1,m2,extraMaterial]]);
+  await pool.query("delete from notificaciones where warehouse_id=any($1) or user_id=any($2)",[[w1,w2],[a1]]);
+  await pool.query("delete from audit_logs where user_id=any($1) or entity_id in(select id from material_requests where material_id=any($2))",[[a1],[m1,m2,extraMaterial]]);
   await pool.query('delete from employee_materials where warehouse_id=any($1)',[[w1,w2]]);
   await pool.query('delete from stock_movements where material_id in(select id from materials where warehouse_id=any($1))',[[w1,w2]]);
   await pool.query('delete from material_requests where material_id=any($1)',[[m1,m2,extraMaterial]]);
   await pool.query('delete from warehouse_people where warehouse_id=any($1)',[[w1,w2]]);
   await pool.query('delete from materials where warehouse_id=any($1)',[[w1,w2]]);
-  await pool.query('delete from staff_profiles where user_id=any($1)',[[a1,a2]]);
-  await pool.query('delete from users where id=any($1)',[[a1,a2]]);
+  await pool.query('delete from staff_profiles where user_id=any($1)',[[a1]]);
+  await pool.query('delete from users where id=any($1)',[[a1]]);
   await pool.query('delete from warehouses where id=any($1)',[[w1,w2]]);
   await pool.end();
 }
