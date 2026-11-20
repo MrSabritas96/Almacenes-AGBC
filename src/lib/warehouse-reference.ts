@@ -1,4 +1,5 @@
 import { compareMaterialNames, compareNames, materialCodePrefix } from "./material-code";
+import { budgetItems } from "./warehouse-budget";
 export const REGIONALS = ["La Paz", "Cochabamba", "Santa Cruz", "Oruro", "Potosí", "Chuquisaca", "Tarija", "Beni", "Pando"] as const;
 // Presentaciones y medidas para papelería, vestuario, limpieza, repuestos y otros insumos.
 export const MATERIAL_UNITS = [
@@ -9,7 +10,7 @@ export const MATERIAL_UNITS = [
   'litro', 'mililitro', 'galón', 'kilogramo', 'gramo', 'tonelada',
   'metro', 'centímetro', 'metro cuadrado', 'metro cúbico',
 ] as const;
-// Fuente: https://correos.gob.bo/ (mapa oficial de oficinas).
+// Rótulos del sistema anterior; también fijan la correspondencia de los códigos históricos.
 const CATEGORY_DEFINITIONS = [
   {
     "code": "25500",
@@ -388,9 +389,11 @@ const CATEGORY_DEFINITIONS = [
     ]
   }
 ];
-// Los números del archivo original se conservan solo como alias de lectura del historial.
-// PAR identifica una partida interna del almacén; los códigos previos siguen siendo alias.
-export const ITEM_CATEGORIES = CATEGORY_DEFINITIONS.map((category,index)=>({
+export type BudgetItem = { code: string; name: string };
+export const officialBudgetItem = (code:string):BudgetItem|undefined =>
+  Object.hasOwn(budgetItems,code)?{code,name:budgetItems[code]!}:undefined;
+
+const historicalCategories = CATEGORY_DEFINITIONS.map((category,index)=>({
   ...category,
   legacyBudgetCode:category.code,
   legacySequenceCode:String(index).padStart(5,'0'),
@@ -399,18 +402,34 @@ export const ITEM_CATEGORIES = CATEGORY_DEFINITIONS.map((category,index)=>({
   ...category,
   previousCode:`${materialCodePrefix(category.name)}-${String(index+1).padStart(3,'0')}`,
   legacyCategoryCode:`CAT-${String(index+1).padStart(3,'0')}`,
-  code:`PAR-${String(index+1).padStart(3,'0')}`,
+  legacyPartidaCode:`PAR-${String(index+1).padStart(3,'0')}`,
 }));
-export const categoryLabel=(category:Pick<typeof ITEM_CATEGORIES[number],'code'|'name'>)=>`${category.code} · ${category.name}`;
+export const ITEM_CATEGORIES = historicalCategories.map(category=>({
+  ...category,
+  code:category.code==='39900'?'39990':category.code,
+})).sort(compareBudgetItems);
+export function compareBudgetItems(a:BudgetItem,b:BudgetItem) {
+  return compareNames(a.name,b.name)||a.code.localeCompare(b.code);
+}
+export const categoryLabel=(category:BudgetItem)=>`${category.code} · ${category.name}`;
 export function categoryAliases(category: typeof ITEM_CATEGORIES[number]) {
-  return [...new Set([category.name,...[category.code,category.legacyCategoryCode,category.previousCode,category.legacyCode,category.legacySequenceCode,category.legacyBudgetCode].flatMap(code=>[code,`${code} · ${category.name}`])])];
+  const official=officialBudgetItem(category.code)!;
+  const previousLabels=[category.code,category.legacyPartidaCode,category.legacyCategoryCode,category.previousCode,category.legacyCode,category.legacySequenceCode,category.legacyBudgetCode]
+    .flatMap(code=>[code,`${code} · ${category.name}`]);
+  return [...new Set([category.name,official.name,categoryLabel(official),...previousLabels])];
 }
 const categoriesByAlias=new Map(ITEM_CATEGORIES.flatMap(category=>categoryAliases(category).map(alias=>[alias,category] as const)));
 export function categoryInfo(value:string){
-  return categoriesByAlias.get(value);
+  const legacy=categoriesByAlias.get(value);
+  if(legacy)return legacy;
+  const code=/^(\d{5})(?:\s+·\s+.+)?$/.exec(value)?.[1];
+  return code?officialBudgetItem(code):undefined;
 }
 export function normalizeCategory(value:string) {
   const category=categoryInfo(value);return category?categoryLabel(category):value;
+}
+export function compareCategoryLabels(a:string,b:string) {
+  return compareNames(categoryInfo(a)?.name??a,categoryInfo(b)?.name??b)||compareNames(a,b);
 }
 export function compareInventoryMaterials(a:{category:string;name:string;code:string},b:{category:string;name:string;code:string}):number {
   return compareNames(categoryInfo(a.category)?.name??a.category,categoryInfo(b.category)?.name??b.category)||compareMaterialNames(a,b);

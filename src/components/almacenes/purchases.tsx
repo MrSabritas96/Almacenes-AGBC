@@ -1,7 +1,8 @@
 "use client";
 import { DateField } from './request-date';
 import { dateInputValue } from '@/lib/request-date';
-import { useRef, useState, useTransition } from 'react';
+import { useEffect, useId, useRef, useState, useTransition } from 'react';
+import { FileImage, FileText, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import type { Snapshot } from '@/lib/warehouse-types';
@@ -43,11 +44,82 @@ export function Suppliers({data,query}:{data:Snapshot;query:string}) {
 type PurchaseLine={key:string;materialId:string;materialText:string;quantity:string;unitCost:string;invoiceDescription:string;lot:string;expiresOn:string};
 const newPurchaseLine=():PurchaseLine=>({key:crypto.randomUUID(),materialId:'',materialText:'',quantity:'1',unitCost:'',invoiceDescription:'',lot:'',expiresOn:''});
 
+const purchaseAttachmentTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+const maxPurchaseAttachments = 4;
+
+function PurchaseAttachmentField({files, setFiles}: {files: File[]; setFiles: (files: File[]) => void}) {
+  const hintId = useId();
+  const picker = useRef<HTMLInputElement>(null);
+  const [selectionError, setSelectionError] = useState('');
+  const [preview, setPreview] = useState<{ index: number; url: string } | null>(null);
+
+  useEffect(() => () => {
+    if (preview) URL.revokeObjectURL(preview.url);
+  }, [preview]);
+
+  return <div className="full-width purchase-attachments">
+    <div className="purchase-attachment-row">
+      <strong>Respaldo de compra</strong>
+      <button type="button" className="secondary-button" disabled={files.length >= maxPurchaseAttachments} aria-describedby={hintId} onClick={() => picker.current?.click()}>
+        <Plus size={16} aria-hidden="true"/>{files.length ? 'Añadir más documentos' : 'Añadir documentos'}
+      </button>
+      <input ref={picker} hidden type="file" accept={purchaseAttachmentTypes.join(',')} multiple onChange={event => {
+        const selected = Array.from(event.currentTarget.files ?? []);
+        event.currentTarget.value = '';
+        if (!selected.length) return;
+        const remaining = maxPurchaseAttachments - files.length;
+        if (selected.length > remaining) {
+          setSelectionError(remaining === 1 ? 'Selecciona un archivo más.' : `Selecciona hasta ${remaining} archivos más.`);
+          return;
+        }
+        setSelectionError('');
+        setFiles([...files, ...selected]);
+      }}/>
+    </div>
+    <p id={hintId} className="form-hint">{files.length} de {maxPurchaseAttachments} adjuntos. Adjunta al menos un PDF, JPG o PNG, de hasta 2 MB por archivo. El mismo respaldo se conserva en cada línea de esta compra.</p>
+    {selectionError && <p className="form-error" role="status">{selectionError}</p>}
+    {files.length > 0 &&
+      <ul className="attachment-list" aria-label="Respaldos seleccionados">
+        {files.map((file, index) => {
+          const isPdf = file.type === 'application/pdf';
+          const Icon = isPdf ? FileText : FileImage;
+          const expanded = preview?.index === index;
+          const unavailable = !purchaseAttachmentTypes.includes(file.type) ? 'Elige un archivo PDF, JPG o PNG.'
+            : file.size === 0 ? 'El archivo está vacío.'
+            : file.size > 2 * 1024 * 1024 ? 'El archivo supera los 2 MB.' : '';
+          return <li key={index}>
+            <div className="purchase-attachment-row">
+              <span className="attachment-name"><Icon size={16} aria-hidden="true"/>{file.name}</span>
+              <div className="attachment-actions">
+                {unavailable ? <small>{unavailable}</small> : <button type="button" className="small-button" aria-expanded={expanded} aria-label={`${expanded ? 'Ocultar vista previa de' : 'Vista previa de'} ${file.name}`} onClick={() => setPreview(expanded ? null : { index, url: URL.createObjectURL(file) })}>
+                  {expanded ? 'Ocultar vista previa' : 'Vista previa'}
+                </button>}
+                <button type="button" className="small-button danger" aria-label={`Quitar ${file.name}`} onClick={() => {
+                  setPreview(null);
+                  setSelectionError('');
+                  setFiles(files.filter((_, fileIndex) => fileIndex !== index));
+                }}>Quitar</button>
+              </div>
+            </div>
+            {expanded && <div className="purchase-attachment-preview">
+              <a className="small-button" href={preview.url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${file.name} en otra pestaña`}>Abrir en otra pestaña</a>
+              {isPdf ? <iframe src={preview.url} title={`Vista previa de ${file.name}`}/>
+                // Local uploads use object URLs and cannot use Next.js image optimization.
+                // eslint-disable-next-line @next/next/no-img-element
+                : <img src={preview.url} alt={`Vista previa de ${file.name}`}/>}
+            </div>}
+          </li>;
+        })}
+      </ul>}
+  </div>;
+}
+
 export function PurchaseEntry({data}:{data:Snapshot}) {
   const dialog=useRef<HTMLDialogElement>(null),router=useRouter(),tabId=useWarehouseTab();
   const [lines,setLines]=useState<PurchaseLine[]>([]),[warehouseId,setWarehouseId]=useState(data.viewer.warehouse_id||data.warehouses[0]?.id||'');
   const [error,setError]=useState(''),[busy,setBusy]=useState(false),[refreshing,startRefresh]=useTransition();
   const [entryKey,setEntryKey]=useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [supplierMode,setSupplierMode]=useState<'registered'|'occasional'>('registered'),[saveNewSupplier,setSaveNewSupplier]=useState(false),[supplierType,setSupplierType]=useState('');
   const supplierTypeOptions=Array.from(new Set(['Tienda','Almacén','Distribuidora','Fábrica','Empresa de servicios','Importadora','Mayorista',...data.suppliers.map(s=>s.business_type).filter(Boolean)])).sort((a,b)=>a.localeCompare(b,'es')).map(label=>({id:label,label}));
   const materialOptions=data.materials.filter(m=>m.warehouse_id===warehouseId).map(m=>({id:m.id,label:`${m.code} · ${m.name}`,description:m.unit}));
@@ -56,14 +128,16 @@ export function PurchaseEntry({data}:{data:Snapshot}) {
   async function submit(event:React.FormEvent<HTMLFormElement>){
     event.preventDefault();
     if(lines.some(line=>!line.materialId)){setError('Selecciona un material de la lista en cada línea.');return;}
+    if (!attachments.length) {setError('Adjunta al menos un documento de respaldo.');return;}
     const form=new FormData(event.currentTarget);
+    for (const file of attachments) form.append('attachments', file);
     form.set('lines',JSON.stringify(lines.map(({materialId,quantity,unitCost,invoiceDescription,lot,expiresOn})=>({materialId,quantity,unitCost,invoiceDescription,lot,expiresOn:dateInputValue(expiresOn)}))));
     setBusy(true);setError('');
     try{const result=await withMinimumLoading(()=>registerPurchase(form,tabId));if(!result.ok){setError(result.error);return;}dialog.current?.close();toast.success('Compra y existencias registradas');startRefresh(()=>router.refresh());window.dispatchEvent(new Event('warehouse:changed'));}
     catch{setError('No se pudo conectar. Reintenta este mismo formulario.');}finally{setBusy(false);}
   }
   return <><button className="secondary-button" disabled={!data.materials.length} onClick={()=>{setEntryKey(crypto.randomUUID());setWarehouseId(data.viewer.warehouse_id||data.warehouses[0]?.id||'');setLines([newPurchaseLine()]);setSupplierMode(data.suppliers.some(s=>s.is_active&&s.warehouse_id===(data.viewer.warehouse_id||data.warehouses[0]?.id))?'registered':'occasional');setSaveNewSupplier(false);setSupplierType('');setError('');dialog.current?.showModal();}}>Registrar compra / reposición</button>
-    <dialog ref={dialog} className="warehouse-dialog purchase-dialog" aria-labelledby="purchase-title" onCancel={e=>{if(busy)e.preventDefault();}}>
+    <dialog ref={dialog} className="warehouse-dialog purchase-dialog" aria-labelledby="purchase-title" onClose={()=>{setEntryKey('');setAttachments([]);}} onCancel={e=>{if(busy)e.preventDefault();}}>
       <h2 id="purchase-title">Compra y reposición de materiales</h2>
       <p>Registra varios materiales de una misma compra con su proveedor, factura y respaldo.</p>
       <form key={entryKey} onSubmit={submit}><input type="hidden" name="submissionKey" value={entryKey}/>
@@ -97,7 +171,7 @@ export function PurchaseEntry({data}:{data:Snapshot}) {
           </div>
           <p className="full-width purchase-total" aria-live="polite"><span>{lines.length} {lines.length===1?'línea de material':'líneas de materiales'} · Total de la compra</span><strong>{money(total)}</strong></p>
           <label className="full-width">Observaciones de la compra<textarea name="notes" maxLength={2000}/></label>
-          <label className="full-width">Respaldo de compra<input name="attachments" type="file" accept="application/pdf,image/jpeg,image/png" multiple required/><small>1 a 4 imágenes o PDF, hasta 2 MB cada uno. El mismo respaldo se conserva en cada línea de esta compra.</small></label>
+          <PurchaseAttachmentField files={attachments} setFiles={setAttachments}/>
           <p className="full-width form-hint">Hasta 50 líneas del mismo almacén. Cada línea genera su entrada PEPS; puedes repetir un material si corresponde a otro lote o costo. La compra se guarda completa: si hay un error, no se registra ningún ingreso.</p>
         </fieldset>
         {error&&<p className="form-error" role="alert">{error}</p>}

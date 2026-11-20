@@ -20,13 +20,13 @@ assert.equal(detail.getCell('A3').value,'DETALLE DE ALMACENES (BIENES DE CONSUMO
 assert.equal(detail.getCell('C8').type,ExcelJS.ValueType.String,'El texto del usuario no se convierte en fórmula');
 assert.equal(detail.getCell('G8').value,10,'Cantidades son números, no cadenas localizadas');
 assert.equal(detail.getCell('K8').value,100);
-assert.equal(detail.getCell('E8').value,'PAR-015');
-assert.equal(entries.getCell('C8').value,'PAR-015');
-assert.equal(summary.getCell('B8').value,'PAR-015 · Papel de escritorio');
+assert.equal(detail.getCell('E8').value,'32100');
+assert.equal(entries.getCell('C8').value,'32100');
+assert.equal(summary.getCell('B8').value,'32100 · Papel de escritorio');
 assert.equal(detail.getCell('N8').formula,'K8+L8-M8');
 assert.equal(detail.getCell('N8').result,180);
 assert.equal(detail.getCell('F8').value,'Detalle escrito del artículo');
-assert.equal(detail.getCell('C7').value,'Artículo');
+assert.equal(detail.getCell('C7').value,'Ítem');
 assert.equal(detail.getCell('F7').value,'Descripción');
 assert(!JSON.stringify(detail.getRow(7).values).includes('Costo unitario'));
 const noDescriptions=createStockWorkbook({...input,rows:rows.map(row=>({...row,description:''}))}).getWorksheet('Detalle de Almacen')!;
@@ -49,7 +49,7 @@ for(const sheet of saved.worksheets){
   assert(sheet.pageSetup.printArea&&sheet.pageSetup.fitToWidth===1);
   const view=sheet.views[0];assert(view?.state==='frozen'&&view.ySplit===7);
   sheet.eachRow(row=>row.eachCell(cell=>{
-    if(typeof cell.value==='string')assert(!/^(32100|34300|25600)(\s|$)/.test(cell.value),'Ninguna hoja exporta los códigos presupuestarios anteriores');
+    if(typeof cell.value==='string')assert(!/^PAR-\d{3}/.test(cell.value),'Ninguna hoja exporta los códigos internos anteriores');
   }));
 }
 for(const label of ['Firma Contabilidad','Firma Responsable','Firma DGAA - DAF'])assert(summary.getSheetValues().some(row=>row&&Object.values(row).includes(label)));
@@ -103,7 +103,7 @@ for (const [kind, values] of [
   sheet.addRow([...values]);
   const legacy = new ExcelJS.Workbook();
   const legacySheet = legacy.addWorksheet(kind);
-  legacySheet.addRow(sheet.getRow(4).values);
+  legacySheet.addRow(kind==='Materiales'?['Material','Partida PAR','Unidad','Mínimo','Ubicación','Descripción']:sheet.getRow(4).values);
   legacySheet.addRow([...values]);
   const current = await parseWarehouseImport(kind, Buffer.from(await branded.xlsx.writeBuffer()));
   const previous = await parseWarehouseImport(kind, Buffer.from(await legacy.xlsx.writeBuffer()));

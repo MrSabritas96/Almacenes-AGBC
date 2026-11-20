@@ -8,7 +8,7 @@ import { createReportPdf } from '../src/lib/report-pdf';
 const row={id:'paper',code:'PAP-001',name:'Papel bond tamaño carta',description:'Presentación de 500 hojas',category:'PAR-015 · Papel de escritorio',unit:'resma',unitCost:180/13,opening:10,openingValue:100,incoming:7,incomingValue:120,outgoing:4,outgoingValue:40,closing:13,closingValue:180};
 const html=renderToStaticMarkup(<StockDetailTable rows={[row]}/>);
 assert(html.includes('rowSpan="2"')&&html.includes('colSpan="2"'),'Cabeceras agrupadas en dos niveles');
-assert(html.indexOf('Código')<html.indexOf('Artículo')&&html.indexOf('Artículo')<html.indexOf('Descripción'),'Código, artículo y detalle separados');
+assert(html.indexOf('Código')<html.indexOf('Ítem')&&html.indexOf('Ítem')<html.indexOf('Descripción'),'Código, artículo y detalle separados');
 assert(!html.includes('Costo unitario'));
 assert(html.includes(row.description));
 const withoutDescription=renderToStaticMarkup(<StockDetailTable rows={[{...row,description:''}]}/>);
@@ -18,7 +18,7 @@ for(const label of ['Saldos iniciales','Ingresos','Egresos','Saldo final'])asser
 assert(!html.includes('Lote'));
 assert(html.includes('<td>10</td><td>100,00</td><td>7</td><td>120,00</td><td>4</td><td>40,00</td><td>13</td><td>180,00</td>'),'Mantiene cantidades y valores en su bloque');
 const logos={agency:new Uint8Array(readFileSync('public/brand/report-agency.png')),presidency:new Uint8Array(readFileSync('public/brand/report-presidency.png'))};
-const record={Código:row.code,Artículo:row.name,Descripción:row.description,Unidad:row.unit,'Cantidad inicial':10,'Valor inicial Bs':'100,00','Entradas cantidad':7,'Entradas Bs':'120,00','Salidas cantidad':4,'Salidas Bs':'40,00','Cantidad final':13,'Valor final Bs':'180,00'};
+const record={Código:row.code,Ítem:row.name,Descripción:row.description,Unidad:row.unit,'Cantidad inicial':10,'Valor inicial Bs':'100,00','Entradas cantidad':7,'Entradas Bs':'120,00','Salidas cantidad':4,'Salidas Bs':'40,00','Cantidad final':13,'Valor final Bs':'180,00'};
 const records=Array.from({length:12},(_,index)=>({...record,Código:`PAP-${String(index+1).padStart(3,'0')}`}));
 const pdf=createReportPdf('Detalle de Almacen',records,'Administrador · Almacén central · Del 2026-10-01 al 2026-10-31 · Expresado en bolivianos.',logos,undefined,{movementLayout:true});
 const table=(pdf as typeof pdf & {lastAutoTable:Table}).lastAutoTable;

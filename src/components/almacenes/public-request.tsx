@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { withMinimumLoading } from '@/lib/loading-time';
 import { PostalLoader } from './postal-loader';
 import { useRef, useState } from "react";
@@ -54,7 +55,7 @@ export default function PublicMaterialRequest({ catalog }: { catalog: Catalog;to
     } catch {setError("No se pudo enviar. Reintenta; el mismo envío no se registrará dos veces.");}
     finally {setBusy(false);}
   }
-  return <main className="warehouse-access public-intake"><header className="access-header"><Brand/><div className="public-request-actions"><a href="/consultar-solicitud" className="text-link">Consultar solicitud</a><a href="/almacenes" className="text-link">Acceso administrativo</a></div></header>
+  return <main className="warehouse-access public-intake"><header className="access-header"><Brand/><div className="public-request-actions"><a href="/consultar-solicitud" className="text-link">Consultar solicitud</a><Link href="/almacenes" className="text-link">Acceso administrativo</Link></div></header>
     <section className="access-panel intake-panel">
       <h1>Solicitud de material</h1><p className="muted">No necesitas una cuenta. Registra tus datos y los materiales que necesitas; la administradora revisará tu solicitud.</p>
       {reference?<div className="request-confirmation" role="status"><CheckCircle2 size={36}/><h2>Solicitud recibida</h2><p>Guarda este comprobante: <strong className="request-reference">{reference}</strong></p><div className="public-request-actions"><button type="button" className="secondary-button" onClick={()=>void copyReference()}><Copy size={16}/>Copiar comprobante</button><button type="button" className="secondary-button" disabled={pdfBusy} onClick={()=>void downloadReceipt()}>{pdfBusy?<PostalLoader/>:<Download size={16}/>} {pdfBusy?"Generando PDF…":"Descargar comprobante"}</button></div>{pdfError&&<p className="form-error" role="alert">{pdfError}</p>}<p className="copy-status" role="status" aria-live="polite">{copyStatus}</p><p>Consulta todas tus solicitudes con tu CI tal como lo registraste. Este comprobante es opcional para buscar un pedido específico. Conserva el comprobante y compártelo únicamente con personas autorizadas. Cuando se apruebe tu solicitud, verás la respuesta y la fecha de recojo. Presenta tu CI para verificar la entrega.</p><a href="/consultar-solicitud" className="secondary-button">Consultar estado de mi solicitud</a><button className="primary-button" onClick={()=>{submissionKey.current="";setReference("");setCopyStatus("");setPdfError("");setReceiptDocument("");setLines(emptyLines());setPriorityText('Normal');}}>Enviar otra solicitud</button></div>:!catalog.warehouses.length?<p className="form-error" role="status">Los formularios de solicitud están cerrados. Contacta a la administradora de almacén.</p>:<form className="access-form" onSubmit={submit} aria-busy={busy}>

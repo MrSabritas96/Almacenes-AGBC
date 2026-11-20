@@ -1,0 +1,2 @@
+"use client";
+export function ImprimirVista(){return <><button onClick={()=>window.print()} className="rounded-xl bg-brand-600 px-4 py-2 text-white print:hidden">Imprimir vista previa</button><style>{`@media print {aside, nav, .archivo-acciones {display:none!important} body,main{background:white!important;padding:0!important} table{font-size:9pt} tr{break-inside:avoid} thead{display:table-header-group} a{color:black!important;text-decoration:none!important}}`}</style></>;}

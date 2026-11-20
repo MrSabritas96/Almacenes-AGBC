@@ -169,7 +169,7 @@ try {
   savedMaterial=(await pool.query('select attachments from materials where id=$1',[m2])).rows[0];assert.equal(savedMaterial.attachments.length,4);
   assert(!(await saveSupplier({...supplierInput,id:actor.supplierId,warehouseId:w2})).ok,'No traslada proveedor ajeno');
   viewer={...viewer,role:'superadmin'};
-  const newMaterial={type:'material',warehouseId:w1,name:'Papel bond carta QA',category:'QA',unit:'resma',stock:0,minimum:0,location:'QA',reason:'Prueba de correlativo'};
+  const newMaterial={type:'material',warehouseId:w1,name:'Papel bond carta QA',category:'32100',unit:'resma',stock:0,minimum:0,location:'QA',reason:'Prueba de correlativo'};
   const before=Number((await pool.query("select coalesce(max(substring(code from '([0-9]+)$')::numeric),0) as n from materials")).rows[0].n);
   const created=await Promise.all([warehouseAction(newMaterial),warehouseAction({...newMaterial,warehouseId:w2})]);assert(created.every(r=>r.ok),JSON.stringify(created));
   const generated=(await pool.query('select id,code from materials where name=$1 and warehouse_id=any($2)',[newMaterial.name,[w1,w2]])).rows;generatedIds.push(...generated.map(m=>m.id));

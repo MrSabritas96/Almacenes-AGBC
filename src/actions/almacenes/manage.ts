@@ -2,9 +2,8 @@
 import { z } from "zod";
 import { consumeFifo, receiveFifo, restoreFifo, syncRequestFifo } from "@/lib/warehouse-fifo";
 import { formatMaterialCode } from "@/lib/material-code";
-import { normalizeCategory } from "@/lib/warehouse-reference";
+import { categoryInfo, ITEM_CATEGORIES, normalizeCategory, officialBudgetItem } from "@/lib/warehouse-reference";
 import { createId } from "@paralleldrive/cuid2";
-import { hashPassword } from "better-auth/crypto";
 import { pool } from "@/db";
 import { warehouseContext } from "@/lib/warehouse";
 import type { DeliveryReceiptData } from "@/lib/warehouse-types";
@@ -16,16 +15,14 @@ import { WarehouseError } from "@/lib/warehouse-errors";
 import { readPurchaseAttachments } from "@/lib/purchase-attachments";
 const short = z.string().trim().min(1).max(200);
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0,10) === v, "Fecha inválida");
-const staffFields = { username: z.string().trim().toLowerCase().min(3).max(30).regex(/^[a-z0-9_]+$/, "Usa entre 3 y 30 letras, números o guiones bajos."), name: short, email: z.string().email().max(200), role: z.literal("admin_almacenes"), warehouseId: short, document: short, position: short, department: short, phone: z.string().trim().max(40) };
 const previousMaterialFields = { name: short, category: short, unit: short, quantity: z.number().int().min(1).max(10000000), serial: z.string().trim().max(200), condition: short, location: short, notes: z.string().trim().max(2000) };
 const commands = z.discriminatedUnion("type", [
+  z.object({type:z.literal("budget_item"),code:z.string().regex(/^\d{5}$/,"Selecciona un código presupuestario válido.")}),
   z.object({type:z.literal("person_active"),id:short,active:z.boolean(),reason:short}),
   z.object({type:z.literal("person"),id:short.optional(),warehouseId:short,...personFields}),
   z.object({ type: z.literal("material"), id: short.optional(), warehouseId: short, name: short, category: short, unit: short, stock: z.number().int().min(0).max(10000000), minimum: z.number().int().min(0).max(10000000), location: short, reason: short, invoiceDescription:z.string().trim().max(2000).default(""), description:z.string().trim().max(2000).default(""), unitCost:z.coerce.number().finite().min(0).max(100000000).default(0), openingOn:z.preprocess(value=>value===''?undefined:value,date.optional()) }),
   z.object({ type: z.literal("archive"), id: short }),
   z.object({ type: z.literal("review"), id: short, status: z.enum(["approved", "waiting", "denied", "delivered"]), response: z.string().trim().max(2000), identityConfirmed: z.literal("on").optional(), deliveryOn: date.optional(), authorizedQuantity:z.coerce.number().int().positive().max(10000000).optional(), fund:z.string().trim().max(200).optional(),lot:z.string().trim().max(200).default(""),expiresOn:z.union([z.literal(""),date]).optional() }),
-  z.object({ type: z.literal("staff"), id: short.optional(), ...staffFields, password: z.string().min(8).max(128).optional() }),
-  z.object({ type: z.literal("deactivate"), id: short, active: z.boolean() }),
   z.object({ type: z.literal("warehouse"), name: short, location: short }),
   z.object({ type: z.literal("request_form"), warehouseId: short, enabled: z.boolean() }),
   z.object({ type: z.literal("employee_material"), id: short.optional(), userId: short, ...previousMaterialFields, recordedOn: date, reason: short }),
@@ -41,7 +38,7 @@ export async function getDeliveryReceipt(input: unknown, tabId?: string) {
     const viewer = await warehouseContext(tabId);
     if (!['superadmin','admin_almacenes'].includes(viewer.role)) throw new WarehouseError("Solo un administrador puede emitir actas de entrega.");
     const result = await pool.query(`select r.id,coalesce((select jsonb_agg(jsonb_build_object('entry_code','E-'||lpad(b.id::text,greatest(6,length(b.id::text)),'0'),'lot',b.lot,'expires_on',b.expires_on,'quantity',a.quantity,'unit_cost',b.unit_cost::text) order by b.received_at,b.id) from inventory_allocations a join inventory_batches b on b.id=a.batch_id where a.request_id=r.id),'[]'::jsonb) as allocations,coalesce(r.authorized_quantity,r.quantity) as quantity,r.quantity as requested_quantity,r.fund,r.lot,r.expires_on,r.purpose,r.unit_cost,m.code,m.unit,m.name as material,r.delivered_at,r.updated_at,r.delivery_place,
-      u.name as employee,u.document,u.position,u.department,u.regional,w.name as warehouse,coalesce(a.name,'Sin registrar') as responsible
+      u.name as employee,u.document,u.position,u.department,u.regional,w.name as warehouse,coalesce(r.reviewed_by_name,a.name,'Sin registrar') as responsible
       from material_requests r join materials m on m.id=r.material_id join warehouse_people u on u.id=r.person_id
       join warehouses w on w.id=m.warehouse_id left join users a on a.id=r.reviewed_by
       where r.id=$1 and r.status='delivered' and ($2::text is null or m.warehouse_id=$2)`, [id,viewer.role==='superadmin'?null:viewer.warehouse_id]);
@@ -66,13 +63,20 @@ export async function warehouseAction(input: unknown, tabId?: string, documents?
     actorId = viewer.id;
     const superadmin = viewer.role === "superadmin";
     const manager = viewer.role === "admin_almacenes" || superadmin;
-    if (["staff", "deactivate", "warehouse"].includes(c.type) && !superadmin) throw new WarehouseError("Solo el SuperAdmin puede administrar el personal.");
-    if (["person_active", "person", "material", "archive", "review", "request_form", "employee_material", "employee_material_batch", "employee_material_archive", "delivery_correct", "delivery_void"].includes(c.type) && !manager) throw new WarehouseError("Solo un administrador puede realizar esta operación.");
+    if (c.type === "warehouse" && !superadmin) throw new WarehouseError("Solo el SuperAdmin puede crear almacenes.");
+    if (["budget_item", "person_active", "person", "material", "archive", "review", "request_form", "employee_material", "employee_material_batch", "employee_material_archive", "delivery_correct", "delivery_void"].includes(c.type) && !manager) throw new WarehouseError("Solo un administrador puede realizar esta operación.");
     const client = await pool.connect();
     try {
       await client.query("begin");
       const scope = (warehouseId: string) => { if (!superadmin && warehouseId !== viewer.warehouse_id) throw new WarehouseError("Este almacén no está asignado a tu cuenta."); };
-      if(c.type === "person_active") {
+      if(c.type === "budget_item") {
+        const item=officialBudgetItem(c.code);
+        if(!item)throw new WarehouseError("El código no figura como partida en el clasificador de 2019.");
+        if(ITEM_CATEGORIES.some(category=>category.code===item.code))throw new WarehouseError("La partida ya está habilitada.");
+        const result=await client.query('insert into warehouse_budget_items(code) values($1) on conflict do nothing',[item.code]);
+        if(!result.rowCount)throw new WarehouseError("La partida ya está habilitada.");
+        changeDetails=item;
+      } else if(c.type === "person_active") {
         const target=await client.query('select * from warehouse_people where id=$1 for update',[c.id]);
         if(!target.rows[0])throw new WarehouseError('Ficha inexistente.');
         scope(target.rows[0].warehouse_id);
@@ -146,6 +150,11 @@ export async function warehouseAction(input: unknown, tabId?: string, documents?
         await client.query("insert into warehouses(id,name,location) values($1,$2,$3)", [createId(), c.name, c.location]);
       } else if (c.type === "material") {
         scope(c.warehouseId);
+        const category=normalizeCategory(c.category);
+        const item=categoryInfo(category);
+        const enabled=item&&(ITEM_CATEGORIES.some(entry=>entry.code===item.code)||
+          (await client.query('select 1 from warehouse_budget_items where code=$1',[item.code])).rowCount);
+        const requireCategory=()=>{if(!enabled)throw new WarehouseError("Selecciona una partida habilitada en el inventario.");};
         const attachments=documents?await readPurchaseAttachments(documents):[];
         if(c.openingOn&&c.openingOn>new Intl.DateTimeFormat("en-CA",{timeZone:"America/La_Paz"}).format(new Date()))throw new WarehouseError("La apertura no puede ser futura.");
         if(!c.id&&c.stock>0&&(!c.openingOn||!c.invoiceDescription||c.unitCost<=0))throw new WarehouseError("Indica fecha, descripción y costo positivo del saldo inicial.");
@@ -157,6 +166,7 @@ export async function warehouseAction(input: unknown, tabId?: string, documents?
           const { rows } = await client.query("select * from materials where id=$1 for update", [id]);
           if (!rows[0] || rows[0].archived) throw new WarehouseError("Material no disponible.");
           scope(rows[0].warehouse_id);
+          if(category!==normalizeCategory(rows[0].category))requireCategory();
           if((rows[0].attachments?.length??0)+attachments.length>4)throw new WarehouseError("El material admite hasta 4 respaldos. Los documentos existentes se conservan.");
           if (rows[0].warehouse_id !== c.warehouseId) throw new WarehouseError("No se puede trasladar un material con historial a otro almacén.");
           previous = rows[0].stock;
@@ -167,15 +177,16 @@ export async function warehouseAction(input: unknown, tabId?: string, documents?
             if(!c.openingOn||!c.invoiceDescription||c.unitCost<=0)throw new WarehouseError("Para el saldo inicial indica fecha, descripción del documento y costo positivo.");
             opening=true;
           }
-          await client.query("update materials set name=$2,category=$3,unit=$4,minimum=$5,location=$6 where id=$1", [id,c.name,normalizeCategory(c.category),c.unit,c.minimum,c.location]);
+          await client.query("update materials set name=$2,category=$3,unit=$4,minimum=$5,location=$6 where id=$1", [id,c.name,category,c.unit,c.minimum,c.location]);
         } else {
+          requireCategory();
           // La numeración es global; incluye materiales archivados y altas simultáneas.
           await client.query("select pg_advisory_xact_lock(hashtextextended('warehouse-material-code',0))");
           let inserted=false;
           for(let attempt=0;attempt<5;attempt++) {
             const {rows}=await client.query("select coalesce(max(substring(code from '([0-9]+)$')::numeric),0)+1 as next_code from materials");
             const code=formatMaterialCode(c.name,Number(rows[0].next_code));
-            const result=await client.query("insert into materials(id,warehouse_id,code,name,category,unit,stock,minimum,location) values($1,$2,$3,$4,$5,$6,$7,$8,$9) on conflict(code) do nothing returning id", [id,c.warehouseId,code,c.name,normalizeCategory(c.category),c.unit,0,c.minimum,c.location]);
+            const result=await client.query("insert into materials(id,warehouse_id,code,name,category,unit,stock,minimum,location) values($1,$2,$3,$4,$5,$6,$7,$8,$9) on conflict(code) do nothing returning id", [id,c.warehouseId,code,c.name,category,c.unit,0,c.minimum,c.location]);
             if(result.rowCount){inserted=true;changeDetails={code};break;}
           }
           if(!inserted)throw new WarehouseError('No se pudo generar el código del material. Intenta nuevamente.');
@@ -218,38 +229,11 @@ export async function warehouseAction(input: unknown, tabId?: string, documents?
           if (c.deliveryOn < today) throw new WarehouseError("La fecha de entrega no puede estar en el pasado.");
           await consumeFifo(client,r.material_id,viewer.id,authorizedQuantity,`Reserva para solicitud ${r.id}`,r.id);
         }
-        await client.query("update material_requests set authorized_quantity=case when $2='approved' then $7 else authorized_quantity end,fund=case when $2='approved' then coalesce($8,fund) else fund end,lot=case when $2='approved' then $9 else lot end,expires_on=case when $2='approved' then nullif($10,'') else expires_on end,unit_cost=case when $2='approved' then (select unit_cost from materials where id=material_requests.material_id) else unit_cost end,status=$2,response=$3,delivery_on=coalesce($4,delivery_on),delivery_place=coalesce($5,delivery_place),reviewed_by=$6,updated_at=now(),delivered_at=case when $2='delivered' then now() else delivered_at end where id=$1", [c.id,c.status,c.response,c.status === "approved" ? c.deliveryOn : null,deliveryPlace,viewer.id,authorizedQuantity,c.fund??null,c.lot,c.expiresOn??null]);
+        await client.query("update material_requests set authorized_quantity=case when $2='approved' then $7 else authorized_quantity end,fund=case when $2='approved' then coalesce($8,fund) else fund end,lot=case when $2='approved' then $9 else lot end,expires_on=case when $2='approved' then nullif($10,'') else expires_on end,unit_cost=case when $2='approved' then (select unit_cost from materials where id=material_requests.material_id) else unit_cost end,status=$2,response=$3,delivery_on=coalesce($4,delivery_on),delivery_place=coalesce($5,delivery_place),reviewed_by=$6,reviewed_by_name=null,updated_at=now(),delivered_at=case when $2='delivered' then now() else delivered_at end where id=$1", [c.id,c.status,c.response,c.status === "approved" ? c.deliveryOn : null,deliveryPlace,viewer.id,authorizedQuantity,c.fund??null,c.lot,c.expiresOn??null]);
         if(c.status==="approved")await syncRequestFifo(client,c.id);
-        if(r.user_id) await client.query("insert into notificaciones(id,user_id,module,title,message,link) values($1,$2,'almacenes',$3,$4,'/dashboard')", [createId(),r.user_id,"Tu solicitud fue actualizada",`${c.status === 'waiting' ? 'Aceptada sin stock' : c.status === 'denied' ? 'Rechazada' : c.status === 'delivered' ? 'Entregada' : 'Aprobada'}: ${c.response} ${c.deliveryOn ?? ''} ${deliveryPlace ?? ''}`]);
+        if(r.user_id) await client.query("insert into notificaciones(id,user_id,module,title,message,link) values($1,$2,'almacenes',$3,$4,'/almacenes/solicitudes')", [createId(),r.user_id,"Tu solicitud fue actualizada",`${c.status === 'waiting' ? 'Aceptada sin stock' : c.status === 'denied' ? 'Rechazada' : c.status === 'delivered' ? 'Entregada' : 'Aprobada'}: ${c.response} ${c.deliveryOn ?? ''} ${deliveryPlace ?? ''}`]);
         await resolveRequestNotifications(client,c.id);
         await syncStockNotifications(client,r.material_id);
-      } else if (c.type === "staff") {
-        const id = c.id ?? createId();
-        const exists = await client.query("select id from warehouses where id=$1", [c.warehouseId]);
-        if (!exists.rowCount) throw new WarehouseError("Selecciona un almacén válido.");
-        if (c.id) {
-          const target = await client.query("select r.name from user_roles ur join roles r on r.id=ur.role_id where ur.user_id=$1", [id]);
-          if (!target.rowCount || target.rows.some(r => r.name!=='admin_almacenes')) throw new WarehouseError("Esta cuenta no puede editarse desde la nómina de almacenes.");
-          await client.query("update users set name=$2,email=$3,username=$4,updated_at=now() where id=$1", [id,c.name,c.email.toLowerCase(),c.username]);
-          await client.query("delete from user_roles where user_id=$1", [id]);
-          await client.query("delete from sessions where user_id=$1", [id]);
-          if (c.password) await client.query("update accounts set password=$2,updated_at=now() where user_id=$1 and provider_id='credential'", [id,await hashPassword(c.password)]);
-        } else {
-          if (!c.password) throw new WarehouseError("Introduce una contraseña de al menos 8 caracteres.");
-          await client.query("insert into users(id,name,email,username) values($1,$2,$3,$4)", [id,c.name,c.email.toLowerCase(),c.username]);
-          await client.query("insert into accounts(id,user_id,account_id,provider_id,password) values($1,$2,$2,'credential',$3)", [createId(),id,await hashPassword(c.password)]);
-        }
-        await client.query("insert into user_roles(user_id,role_id) select $1,id from roles where name=$2", [id,c.role]);
-        await client.query("insert into staff_profiles(user_id,warehouse_id,document,position,department,phone) values($1,$2,$3,$4,$5,$6) on conflict(user_id) do update set warehouse_id=$2,document=$3,position=$4,department=$5,phone=$6", [id,c.warehouseId,c.document,c.position,c.department,c.phone]);
-        if(c.role==='admin_almacenes') {
-          const low=await client.query('select id from materials where warehouse_id=$1 and not archived and stock<=minimum order by id',[c.warehouseId]);
-          for(const material of low.rows) await syncStockNotifications(client,material.id);
-        }
-      } else if (c.type === "deactivate") {
-        const target = await client.query("select r.name from user_roles ur join roles r on r.id=ur.role_id where ur.user_id=$1", [c.id]);
-        if (!target.rowCount || target.rows.some(r => r.name!=='admin_almacenes')) throw new WarehouseError("Esta cuenta no puede eliminarse desde almacenes.");
-        await client.query("update users set is_active=$2,updated_at=now() where id=$1", [c.id,c.active]);
-        await client.query("delete from sessions where user_id=$1", [c.id]);
       }
       await client.query("commit");
     } catch (error) {
@@ -258,7 +242,7 @@ export async function warehouseAction(input: unknown, tabId?: string, documents?
     } finally { client.release(); }
     await audit({ userId: viewer.id, module: "almacenes", action: c.type, entityId: c.type === "request_form" ? c.warehouseId : "id" in c ? c.id : undefined, details: c.type === "request_form" ? { enabled: c.enabled } : changeDetails });
     (globalThis as typeof globalThis & { __io?: { to: (room: string) => { emit: (event: string) => void } } }).__io?.to("warehouse:live").emit("warehouse:changed");
-    revalidatePath("/dashboard");
+    revalidatePath("/almacenes/[section]", "page");
     return { ok: true };
   } catch (error) {
     const databaseError = error as { code?: string } | null;

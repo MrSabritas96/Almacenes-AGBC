@@ -746,7 +746,7 @@ label textarea:focus,
   margin: 0;
 }
 
-.dashboard-sidebar nav button {
+.dashboard-sidebar nav .nav-link {
   color: #0b3b83;
   border: 0;
   background: transparent;
@@ -769,25 +769,25 @@ label textarea:focus,
   cursor: pointer;
 }
 
-.dashboard-sidebar nav button:hover {
+.dashboard-sidebar nav .nav-link:hover {
   background: rgba(255, 255, 255, 0.24);
   color: #072a63;
   transform: translateX(2px);
 }
 
-.dashboard-sidebar nav button.active {
+.dashboard-sidebar nav .nav-link.active {
   background: #ffffff;
   color: #0b3b83;
   box-shadow: 0 2px 8px rgba(11, 59, 131, 0.1), inset 3px 0 0 #0b3b83;
   font-weight: 750;
 }
 
-.dashboard-sidebar nav button.active:hover {
+.dashboard-sidebar nav .nav-link.active:hover {
   background: #ffffff;
   transform: none;
 }
 
-.dashboard-sidebar.app-sidebar nav button > svg {
+.dashboard-sidebar.app-sidebar nav .nav-link > svg {
   color: var(--postal-blue);
   background: transparent;
   width: 20px;
@@ -800,11 +800,11 @@ label textarea:focus,
   transition: transform 0.18s var(--ease-spring);
 }
 
-.dashboard-sidebar nav button:hover > svg {
+.dashboard-sidebar nav .nav-link:hover > svg {
   transform: scale(1.1);
 }
 
-.warehouse-dashboard .dashboard-sidebar nav button.active > svg {
+.warehouse-dashboard .dashboard-sidebar nav .nav-link.active > svg {
   color: var(--postal-blue);
   background: transparent;
 }
@@ -820,7 +820,7 @@ label textarea:focus,
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-.dashboard-sidebar nav button.active .nav-count {
+.dashboard-sidebar nav .nav-link.active .nav-count {
   background: var(--postal-yellow);
   color: #0b3b83;
 }
@@ -1685,6 +1685,36 @@ label textarea:focus,
   transform: scale(1.06);
 }
 
+.notification-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--postal-border);
+}
+
+.notification-filter {
+  padding: 6px 8px;
+  border: 1px solid var(--postal-border);
+  border-radius: 7px;
+  color: var(--postal-navy);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notification-filter[data-state="checked"] {
+  background: var(--postal-yellow);
+  border-color: var(--postal-yellow);
+}
+
+.notification-filter[data-highlighted] {
+  outline: 2px solid var(--postal-blue);
+  outline-offset: 1px;
+}
+
 .notification-list {
   overflow-y: auto;
   max-height: 360px;
@@ -2333,6 +2363,32 @@ label textarea:focus,
 
 .attachment-name > svg { flex-shrink: 0; }
 .attachment-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.purchase-attachments { min-width: 0; }
+.purchase-attachments .attachment-list { margin-bottom: 0; }
+.purchase-attachment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.purchase-attachment-row .attachment-name { min-width: 0; }
+.purchase-attachment-preview {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  min-width: 0;
+}
+.purchase-attachment-preview :is(img, iframe) {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--postal-border);
+  border-radius: 8px;
+  background: #fff;
+}
+.purchase-attachment-preview img { max-height: min(420px, 55vh); object-fit: contain; }
+.purchase-attachment-preview iframe { height: min(540px, 60vh); }
 
 .purchase-history-menu > summary:hover {
   background: #f8fbff;
@@ -3024,14 +3080,84 @@ body:has(.warehouse-login) {
 .warehouse-dashboard .dashboard-topbar.app-header {
   background: linear-gradient(90deg, #ffc400 0%, #0b3b83 100%);
   border-bottom-color: #0b3b83;
+  justify-content: flex-start;
 }
-.warehouse-dashboard .dashboard-topbar > span {
-  flex: 0 1 auto;
-  margin-right: auto;
-  background: rgba(255, 255, 255, 0.9);
-  color: #0b3b83;
-  padding: 5px 10px;
-  border-radius: 8px;
+.warehouse-dashboard .dashboard-body.activos-body {
+  display: flex;
+  flex-direction: column;
+}
+.activos-banner {
+  background: linear-gradient(135deg, var(--postal-blue-dark), var(--postal-blue));
+  border-bottom: 3px solid var(--postal-yellow);
+}
+.activos-workspace label :is(input[type="radio"], input[type="checkbox"]) {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin: 0.2em 0 0;
+  padding: 0;
+  box-shadow: none;
+  accent-color: var(--postal-blue);
+}
+.activos-workspace label :is(input[type="radio"], input[type="checkbox"]):focus-visible {
+  outline: 2px solid var(--postal-blue);
+  outline-offset: 2px;
+}
+.dashboard-topbar .navbar-actions { margin-inline-start: auto; }
+.module-navigation { display: flex; align-items: center; gap: 6px; }
+.module-navigation button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9px;
+  background: var(--postal-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 180ms var(--ease-spring), transform 180ms var(--ease-spring);
+}
+.module-navigation button[aria-current="page"] {
+  background: #ffc400;
+  color: var(--postal-blue);
+  border-color: var(--postal-blue);
+  box-shadow: inset 4px 0 0 var(--postal-blue);
+  cursor: default;
+}
+.module-navigation button:not([aria-current]):hover:not(:disabled) {
+  background: var(--postal-blue-light);
+}
+.module-navigation button:not([aria-current]):active:not(:disabled) {
+  transform: scale(0.985);
+}
+.module-navigation button:focus-visible {
+  outline: 2px solid var(--postal-navy);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px #fff;
+}
+.module-navigation button:disabled { opacity: 0.65; }
+@media (max-width: 800px) {
+  .warehouse-dashboard .dashboard-topbar.app-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+  }
+  .dashboard-topbar .module-navigation { grid-column: 1 / -1; grid-row: 2; }
+  .warehouse-dashboard .module-navigation button { flex: 1; }
+}
+@media (max-width: 767px) {
+  .warehouse-dashboard .dashboard-body,
+  .warehouse-dashboard[data-sidebar-expanded="true"] .dashboard-body { margin-left: 0; }
+  .activos-topbar.app-header { gap: 8px; }
+  .module-navigation button { padding-inline: 8px; font-size: 12px; }
+}
+@media print {
+  .activos-workspace :is(.dashboard-topbar.app-header, .dashboard-sidebar) { display: none; }
+  .activos-workspace.warehouse-dashboard .dashboard-body.activos-body { margin-left: 0; }
 }
 /* La clase también cubre el menú móvil renderizado fuera del dashboard. */
 .dashboard-sidebar.app-sidebar {
@@ -3042,38 +3168,39 @@ body:has(.warehouse-login) {
   background: transparent;
   border-color: transparent;
 }
-.dashboard-sidebar.app-sidebar nav button {
+.dashboard-sidebar.app-sidebar nav .nav-link {
   background: #0b3b83;
   color: #fff;
+  text-decoration: none;
   border: 1px solid rgba(255, 255, 255, 0.25);
   box-shadow: none;
 }
-.dashboard-sidebar.app-sidebar nav button > svg {
+.dashboard-sidebar.app-sidebar nav .nav-link > svg {
   color: #fff;
 }
-.dashboard-sidebar.app-sidebar nav button:hover {
+.dashboard-sidebar.app-sidebar nav .nav-link:hover {
   background: #174b91;
   color: #fff;
 }
-.dashboard-sidebar.app-sidebar nav button.active,
-.dashboard-sidebar.app-sidebar nav button.active:hover {
+.dashboard-sidebar.app-sidebar nav .nav-link.active,
+.dashboard-sidebar.app-sidebar nav .nav-link.active:hover {
   background: #ffc400;
   color: #0b3b83;
   border-color: #0b3b83;
   box-shadow: inset 4px 0 0 #0b3b83;
 }
-.dashboard-sidebar.app-sidebar nav button.active > svg {
+.dashboard-sidebar.app-sidebar nav .nav-link.active > svg {
   color: #0b3b83;
 }
-.dashboard-sidebar.app-sidebar nav button .nav-count {
+.dashboard-sidebar.app-sidebar nav .nav-link .nav-count {
   background: #fff;
   color: #0b3b83;
 }
-.dashboard-sidebar.app-sidebar nav button.active .nav-count {
+.dashboard-sidebar.app-sidebar nav .nav-link.active .nav-count {
   background: #0b3b83;
   color: #fff;
 }
-.dashboard-sidebar.app-sidebar nav button:focus-visible {
+.dashboard-sidebar.app-sidebar nav .nav-link:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
   box-shadow: 0 0 0 4px #0b3b83;

@@ -57,6 +57,7 @@ modules.set('./warehouse-errors', errors);
 modules.set('@/lib/warehouse-fifo',await load('src/lib/warehouse-fifo.ts'));
 modules.set('@/lib/purchase-attachments',await load('src/lib/purchase-attachments.ts'));
 modules.set('./warehouse-notifications', modules.get('@/lib/warehouse-notifications'));
+modules.set('./warehouse-budget',await load('src/lib/warehouse-budget.ts'));
 modules.set('./warehouse-reference',await load('src/lib/warehouse-reference.ts'));
 modules.set('@/lib/warehouse-reference',modules.get('./warehouse-reference'));
 const validation = await load('src/lib/warehouse-validation.ts');
@@ -83,6 +84,19 @@ connectionError = undefined;
 assert.equal((await receiveMaterialRequest(intake)).error, 'No se pudo registrar la solicitud. Intenta nuevamente.', 'Query and rollback failures must not expose internal errors');
 respond = () => ({ rows: [], rowCount: 0 });
 assert.equal((await receiveMaterialRequest(intake)).error, 'El formulario de este almacén está cerrado.', 'Expected domain errors remain actionable');
+
+const addBudgetItem = code => warehouseAction({ type: 'budget_item', code });
+assert.equal((await addBudgetItem('99999')).ok, false, 'Rechaza códigos ajenos al clasificador');
+assert.equal((await addBudgetItem('32100')).ok, false, 'Rechaza partidas originales ya habilitadas');
+assert.equal((await addBudgetItem('39200')).ok, false, 'Rechaza duplicados en la base');
+respond = sql => ({ rows: [], rowCount: Number(sql.startsWith('insert into warehouse_budget_items')) });
+assert.equal((await addBudgetItem('39200')).ok, true, 'Un administrador puede añadir una partida oficial');
+viewer = { ...viewer, role: 'empleado_agbc' };
+calls = [];
+assert.equal((await addBudgetItem('32400')).ok, false);
+assert.equal(calls.length, 0, 'Un empleado no puede ampliar el catálogo');
+viewer = { ...viewer, role: 'admin_almacenes' };
+respond = () => ({ rows: [], rowCount: 0 });
 
 for (const id of ['', 'x'.repeat(201)]) {
   calls = [];

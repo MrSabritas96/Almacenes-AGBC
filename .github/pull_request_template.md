@@ -1,5 +1,5 @@
 ## Módulo
-- [ ] activos  - [ ] almacenes  - [ ] conciliaciones  - [ ] núcleo compartido
+- [ ] activos  - [ ] almacenes  - [ ] núcleo compartido
 
 ## ¿Qué cambia?
 

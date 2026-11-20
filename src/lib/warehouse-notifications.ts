@@ -1,15 +1,16 @@
 import { createId } from '@paralleldrive/cuid2';
 import type { PoolClient } from 'pg';
+import { warehouseHref } from './warehouse-routes';
 
 async function notifyManagers(client:PoolClient, warehouseId:string, entityId:string, eventKey:string, kind:string, title:string, message:string, view:'inventory'|'requests') {
   await client.query(`insert into notificaciones(id,user_id,module,title,message,link,kind,warehouse_id,entity_id,event_key)
     select $1 || '-' || u.id,u.id,'almacenes',$2,$3,$4,$5,$6,$7,$8 from users u
-    where u.is_active and exists(select 1 from user_roles ur join roles r on r.id=ur.role_id left join staff_profiles p on p.user_id=u.id
-      where ur.user_id=u.id and (r.name='superadmin' or (r.name='admin_almacenes' and p.warehouse_id=$6)))
+    where u.is_active and exists(select 1 from user_roles ur join roles r on r.id=ur.role_id
+      where ur.user_id=u.id and r.name='superadmin')
     on conflict(user_id,event_key) do update set title=excluded.title,message=excluded.message,link=excluded.link,kind=excluded.kind,
       is_read=case when notificaciones.resolved or notificaciones.kind<>excluded.kind then false else notificaciones.is_read end,
       created_at=case when notificaciones.resolved or notificaciones.kind<>excluded.kind then now() else notificaciones.created_at end,resolved=false`,
-    [createId(),title,message,`/dashboard?view=${view}&focus=${encodeURIComponent(entityId)}`,kind,warehouseId,entityId,eventKey]);
+    [createId(),title,message,warehouseHref(view, entityId),kind,warehouseId,entityId,eventKey]);
 }
 
 export async function notifyNewRequest(client:PoolClient, requestId:string) {

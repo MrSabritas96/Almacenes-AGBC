@@ -10,15 +10,14 @@ import { formatMaterialCode } from './material-code';
 import { cellValue, parseWarehouseClosing, readWarehouseWorkbook } from './warehouse-closing';
 import { WarehouseError } from './warehouse-errors';
 import { syncStockNotifications } from './warehouse-notifications';
-import { categoryLabel, ITEM_CATEGORIES, MATERIAL_UNITS, normalizeCategory } from './warehouse-reference';
+import { categoryLabel, ITEM_CATEGORIES, MATERIAL_UNITS, normalizeCategory, type BudgetItem } from './warehouse-reference';
 import { personFields, shortText } from './warehouse-validation';
 
 const optional = z.string().trim().max(200);
-const categories = new Set(ITEM_CATEGORIES.map(categoryLabel));
 const templates = {
   Materiales: {
-    headers: ['Material', 'Partida PAR', 'Unidad', 'Mínimo', 'Ubicación', 'Descripción'],
-    schema: z.tuple([shortText, shortText.transform(normalizeCategory).refine(value => categories.has(value)),
+    headers: ['Ítem', 'Partida', 'Unidad', 'Mínimo', 'Ubicación', 'Descripción'],
+    schema: z.tuple([shortText, shortText.transform(normalizeCategory),
       z.enum(MATERIAL_UNITS), z.coerce.number().int().min(0).max(1e7), optional, z.string().max(2000)]),
   },
   Proveedores: {
@@ -37,7 +36,7 @@ export type ImportKind = typeof importKinds[number];
 
 const templateHeaderRow = 4;
 
-export async function templateBytes(kind: Template) {
+export async function templateBytes(kind: Template, categories: readonly BudgetItem[] = ITEM_CATEGORIES) {
   const book = new ExcelJS.Workbook();
   book.creator = 'Agencia Boliviana de Correos';
   const banner = book.addImage({ base64: await readFile(join(process.cwd(), 'public', excelBannerPath), 'base64'), extension: 'png' });
@@ -53,23 +52,27 @@ export async function templateBytes(kind: Template) {
     const reference = book.addWorksheet('Referencia', { views: [{ state: 'frozen', ySplit: templateHeaderRow }] });
     reference.columns = [{ width: 65 }, { width: 24 }];
     addExcelHeading(reference, banner, 'Referencia de materiales');
-    styleExcelColumns(reference, templateHeaderRow, ['Partidas PAR', 'Unidades']);
-    for (let i = 0; i < Math.max(ITEM_CATEGORIES.length, MATERIAL_UNITS.length); i++) {
-      const category = ITEM_CATEGORIES[i];
+    styleExcelColumns(reference, templateHeaderRow, ['Partidas del clasificador', 'Unidades']);
+    for (let i = 0; i < Math.max(categories.length, MATERIAL_UNITS.length); i++) {
+      const category = categories[i];
       reference.addRow([category ? categoryLabel(category) : '', MATERIAL_UNITS[i] ?? '']);
     }
   }
   return Buffer.from(await book.xlsx.writeBuffer());
 }
 
-export async function parseWarehouseImport(kind: ImportKind, bytes: Buffer) {
+export async function parseWarehouseImport(kind: ImportKind, bytes: Buffer, categories: readonly BudgetItem[] = ITEM_CATEGORIES) {
   const book = await readWarehouseWorkbook(bytes);
   const digest = createHash('sha256').update(bytes).digest('hex');
   if (kind === 'Cierre') return { kind, digest, closing: parseWarehouseClosing(book) } as const;
   const sheet = book.getWorksheet(kind);
   const template = templates[kind];
   const headerRow = [1, templateHeaderRow].find(row =>
-    sheet && template.headers.every((header, i) => sheet.getCell(row, i + 1).value === header));
+    sheet && template.headers.every((header, i) => {
+      const value = sheet.getCell(row, i + 1).value;
+      return value === header || (kind === 'Materiales' && ((i === 0 && value === 'Material') || (i === 1 && value === 'Partida PAR')));
+    }));
+  const enabledCategories = new Set(categories.map(categoryLabel));
   if (!sheet || !headerRow || sheet.rowCount > headerRow + 1000 || sheet.columnCount > template.headers.length) {
     throw new WarehouseError(`Usa la plantilla ${kind} con un máximo de 1.000 filas de datos.`);
   }
@@ -92,6 +95,9 @@ export async function parseWarehouseImport(kind: ImportKind, bytes: Buffer) {
       throw new WarehouseError(`${kind}, fila ${i}: revisa ${template.headers[column] ?? 'los campos'}.`);
     }
     const values = result.data;
+    if (kind === 'Materiales' && !enabledCategories.has(String(values[1]))) {
+      throw new WarehouseError(`Materiales, fila ${i}: usa una partida habilitada en el inventario.`);
+    }
     const key = masterKey(String(kind === 'Materiales' ? values[0] : values[1]));
     if (seen.has(key)) throw new WarehouseError(`${kind}, fila ${i}: hay un identificador repetido en el archivo.`);
     seen.add(key);

@@ -28,9 +28,3 @@
 /src/actions/almacenes/             @walter-flowers-dx
 /src/components/modules/almacenes/  @walter-flowers-dx
 /src/db/schema/almacenes.schema.ts  @walter-flowers-dx
-
-# ── Módulo Conciliaciones: Manuel ──
-/src/app/(admin)/conciliaciones/            @MrSabritas96
-/src/actions/conciliaciones/                @MrSabritas96
-/src/components/modules/conciliaciones/     @MrSabritas96
-/src/db/schema/conciliaciones.schema.ts     @MrSabritas96
